@@ -58,9 +58,20 @@ class RiskEngine:
         self.t_high, self.t_low = t_high, t_low
         self.min_frames = max(1, int(round(C.MIN_ALERT_SECONDS * eff_fps)))
         self.model = None
+        self.seq = None            # BiGRU по последовательности кадров (ансамбль с RF)
         if model_path and Path(model_path).exists():
             import joblib
             self.model = joblib.load(model_path)["model"]
+            seq_path = Path(model_path).with_name("seq.pt")
+            if seq_path.exists():
+                try:
+                    import torch
+                    from train_sequence import SeqNet
+                    ck = torch.load(seq_path, map_location="cpu", weights_only=False)
+                    self.seq = SeqNet(ck["n_in"]); self.seq.load_state_dict(ck["state"]); self.seq.eval()
+                    self._seq_norm = (ck["mean"], ck["std"])
+                except Exception as e:
+                    print("BiGRU не загружен, работает только RF:", e)
         self.reset()
 
     @property
@@ -90,7 +101,14 @@ class RiskEngine:
         if len(self.rows) >= C.WINDOW:
             vec = aggregate_window(np.array(self.rows))
             if self.model is not None and self.n % C.WINDOW_STRIDE == 0:
-                self.prob = float(self.model.predict_proba(vec[None])[0, 1])
+                p = float(self.model.predict_proba(vec[None])[0, 1])
+                if self.seq is not None:
+                    import torch
+                    from train_sequence import prep
+                    x = prep(np.array(self.rows, np.float32)[None], *self._seq_norm)
+                    with torch.no_grad():
+                        p = 0.5 * p + 0.5 * float(torch.sigmoid(self.seq(torch.from_numpy(x))))
+                self.prob = p
         score = smooth
         if self.model is not None and self.prob is not None:
             score = C.MODEL_BLEND * self.prob + (1 - C.MODEL_BLEND) * smooth

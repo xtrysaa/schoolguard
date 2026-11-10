@@ -67,5 +67,72 @@
    "FN": 63,
    "TN": 154
   }
+ ],
+ "metrics_sequence": [
+  {
+   "model": "BiGRU+attention",
+   "accuracy": 0.7747,
+   "precision": 0.8331,
+   "recall": 0.733,
+   "f1": 0.7799,
+   "roc_auc": 0.8681,
+   "FPR": 0.1754
+  },
+  {
+   "model": "RandomForest (агрегаты)",
+   "accuracy": 0.7779,
+   "precision": 0.7907,
+   "recall": 0.8051,
+   "f1": 0.7979,
+   "roc_auc": 0.864,
+   "FPR": 0.2546
+  },
+  {
+   "model": "Ансамбль RF+BiGRU",
+   "accuracy": 0.7892,
+   "precision": 0.8233,
+   "recall": 0.7802,
+   "f1": 0.8012,
+   "roc_auc": 0.875,
+   "FPR": 0.2001
+  }
+ ],
+ "metrics_sequence_by_source": [
+  {
+   "model": "Ансамбль@rlvs",
+   "accuracy": 0.7918,
+   "precision": 0.8259,
+   "recall": 0.7841,
+   "f1": 0.8044,
+   "roc_auc": 0.8775,
+   "FPR": 0.1988
+  },
+  {
+   "model": "BiGRU@rlvs",
+   "accuracy": 0.7769,
+   "precision": 0.8343,
+   "recall": 0.738,
+   "f1": 0.7832,
+   "roc_auc": 0.8702,
+   "FPR": 0.1763
+  },
+  {
+   "model": "Ансамбль@surv",
+   "accuracy": 0.7237,
+   "precision": 0.7487,
+   "recall": 0.6773,
+   "f1": 0.7112,
+   "roc_auc": 0.7994,
+   "FPR": 0.2294
+  },
+  {
+   "model": "BiGRU@surv",
+   "accuracy": 0.7215,
+   "precision": 0.7952,
+   "recall": 0.6,
+   "f1": 0.6839,
+   "roc_auc": 0.8102,
+   "FPR": 0.156
+  }
  ]
 }

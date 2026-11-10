@@ -123,7 +123,7 @@ def main():
     (OUT / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8")
 
     metrics = {}
-    for name in ("metrics", "metrics_by_source"):
+    for name in ("metrics", "metrics_by_source", "metrics_sequence", "metrics_sequence_by_source"):
         p = C.REPORTS_DIR / f"{name}.csv"
         if p.exists():
             metrics[name] = json.loads(pd.read_csv(p).to_json(orient="records"))

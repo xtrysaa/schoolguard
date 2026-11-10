@@ -18,6 +18,15 @@ export default function Metrics() {
         <thead><tr><th>Модель</th>{cols.map((c) => <th key={c}>{c}</th>)}</tr></thead>
         <tbody>{rows.map((r) => <tr key={r.model}><td>{r.model}</td>{cols.map((c) => <td key={c}>{fmt(r[c])}</td>)}</tr>)}</tbody>
       </table>
+      {(m.metrics_sequence || []).length > 0 && (
+        <>
+          <p className="note" style={{ marginTop: 14 }}>Временная модель и ансамбль (используется в системе):</p>
+          <table>
+            <thead><tr><th>Модель</th>{cols.map((c) => <th key={c}>{c}</th>)}</tr></thead>
+            <tbody>{m.metrics_sequence.map((r) => <tr key={r.model}><td>{r.model}</td>{cols.map((c) => <td key={c}>{fmt(r[c])}</td>)}</tr>)}</tbody>
+          </table>
+        </>
+      )}
       {(m.metrics_by_source || []).length > 0 && (
         <>
           <p className="note" style={{ marginTop: 14 }}>По источникам данных (лучшая модель):</p>

@@ -4,7 +4,7 @@
   "title": "Конфликт · fi001",
   "label": 1,
   "duration": 2.12,
-  "peak": 0.724,
+  "peak": 0.609,
   "alerts": 1
  },
  {
@@ -12,7 +12,7 @@
   "title": "Конфликт · fi121",
   "label": 1,
   "duration": 2.0,
-  "peak": 0.806,
+  "peak": 0.689,
   "alerts": 1
  },
  {
@@ -20,7 +20,7 @@
   "title": "Конфликт · fi106",
   "label": 1,
   "duration": 2.0,
-  "peak": 0.737,
+  "peak": 0.644,
   "alerts": 1
  },
  {
@@ -28,7 +28,7 @@
   "title": "Конфликт · fi115",
   "label": 1,
   "duration": 2.0,
-  "peak": 0.696,
+  "peak": 0.607,
   "alerts": 1
  },
  {
@@ -36,7 +36,7 @@
   "title": "Конфликт · fi117",
   "label": 1,
   "duration": 2.2,
-  "peak": 0.842,
+  "peak": 0.784,
   "alerts": 1
  },
  {
@@ -44,7 +44,7 @@
   "title": "Конфликт · fi105",
   "label": 1,
   "duration": 2.0,
-  "peak": 0.731,
+  "peak": 0.691,
   "alerts": 1
  },
  {
@@ -52,7 +52,7 @@
   "title": "Обычное поведение · nofi072",
   "label": 0,
   "duration": 2.0,
-  "peak": 0.307,
+  "peak": 0.213,
   "alerts": 0
  },
  {
@@ -68,7 +68,7 @@
   "title": "Обычное поведение · nofi075",
   "label": 0,
   "duration": 2.0,
-  "peak": 0.303,
+  "peak": 0.211,
   "alerts": 0
  },
  {
@@ -76,7 +76,7 @@
   "title": "Обычное поведение · nofi003",
   "label": 0,
   "duration": 2.4,
-  "peak": 0.54,
+  "peak": 0.568,
   "alerts": 0
  },
  {
@@ -92,7 +92,7 @@
   "title": "Обычное поведение · nofi050",
   "label": 0,
   "duration": 2.0,
-  "peak": 0.369,
+  "peak": 0.388,
   "alerts": 0
  }
 ]
