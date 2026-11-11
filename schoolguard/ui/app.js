@@ -52,7 +52,9 @@ function renderLive() {
   }
   main.innerHTML = `<div class="head"><div><h1>Наблюдение</h1><p>Скелеты рисуются поверх видео. Число — риск конфликта от 0 до 1, белая отметка на шкале — порог тревоги.</p></div>
     <button class="btn" onclick="go('cameras')">Добавить камеру</button></div>
-  <div class="grid ${cams.length === 1 ? "one" : ""}">${cams.map(c => `
+  <div class="kpis"><div><span class="lbl">Камеры в сети</span><b data-k="cams"></b></div><div><span class="lbl">Тревог за сутки</span><b data-k="day"></b></div>
+    <div><span class="lbl">Ждут проверки</span><b data-k="new"></b></div><div><span class="lbl">Получателей в Telegram</span><b data-k="tg"></b></div></div>
+  <div class="livewrap"><div class="grid ${cams.length === 1 ? "one" : ""}">${cams.map(c => `
     <div class="tile" data-cam="${c.id}">
       <div class="thead"><span class="no">CAM ${String(c.no).padStart(2, "0")}</span><b>${esc(c.name)}</b><span class="st"><i class="dot" data-f="dot"></i><span data-f="st"></span></span></div>
       ${c.demo ? `<div class="demobar"><span class="lbl">Демо-запись</span><span class="ttl" data-f="dttl"></span><span class="truth" data-f="dtruth"></span>
@@ -65,11 +67,28 @@ function renderLive() {
           <div class="ticks"><span>0.0</span><span>0.25</span><span>0.5</span><span>0.75</span><span>1.0</span></div></div>
       </div>
       <div class="sigs">${Object.entries(S.signals).map(([k, v]) => `<div class="sig" data-sig="${k}"><span>${esc(v)}</span><em>0.00</em><div class="track"><u></u></div></div>`).join("")}</div>
-    </div>`).join("")}</div>`;
+    </div>`).join("")}</div>
+    <aside class="rail"><h2><span>Очередь событий</span><span data-k="qn"></span></h2><div id="queue"></div><button class="btn sm" onclick="go('events')">Все события</button></aside></div>`;
+  queueKey = "";
 }
 
+let queueKey = "";
 function tick() {
   if (!S || page !== "live") return;
+  const k = n => main.querySelector(`[data-k="${n}"]`);
+  if (k("cams")) {
+    const on = S.cameras.filter(c => c.state === "online").length;
+    k("cams").textContent = `${on} / ${S.cameras.length}`; k("day").textContent = S.stats.day;
+    k("new").textContent = S.stats.unreviewed; k("new").className = S.stats.unreviewed ? "warn" : "";
+    k("tg").textContent = S.telegram.recipients.length; k("tg").className = S.telegram.recipients.length ? "ok" : "warn";
+    const top = events.slice(0, 5), key = top.map(e => e.id + (e.verdict || "")).join(",") + "|" + events.length;
+    if (key !== queueKey && $("#queue")) {
+      queueKey = key; k("qn").textContent = events.length ? `${top.length} из ${events.length}` : "";
+      $("#queue").innerHTML = top.length ? top.map(e => `<button class="q" onclick="openEvent('${e.id}')"><span class="qn">Камера № ${e.camera_no} — ${esc(e.camera_name)}</span>
+        <span class="qs">${e.peak.toFixed(2)}<small class="${e.verdict === "confirmed" ? "ok" : e.verdict === "false_alarm" ? "fp" : ""}">${e.verdict === "confirmed" ? "подтверждено" : e.verdict === "false_alarm" ? "ложная" : "проверить"}</small></span>
+        <span class="qt">${fmtDate(e.ts)} · ${fmtTime(e.ts)}</span></button>`).join("") : `<div class="none">Тревог пока не было. Новые события появятся здесь.</div>`;
+    }
+  }
   for (const c of S.cameras) {
     const t = main.querySelector(`[data-cam="${c.id}"]`);
     if (!t) continue;
@@ -99,7 +118,7 @@ async function demoStep(id, step) { await api(`/api/cameras/${id}/demo`, { step 
 async function addDemo() { await api("/api/cameras", { demo: true }); page = "live"; lastKey = ""; poll(); }
 
 // ------------------------------------------------------------------ события
-async function loadEvents() { events = await api("/api/events?limit=300"); if (page === "events") renderEvents(); }
+async function loadEvents() { events = await api("/api/events?limit=300"); if (page === "events") renderEvents(); else tick(); }
 function renderEvents() {
   const list = events.filter(e => evFilter === "all" || (evFilter === "new" ? !e.verdict : e.verdict === evFilter));
   const st = S.stats;
@@ -269,4 +288,5 @@ async function quitApp() { if (!confirm("Остановить наблюдени
 render();
 poll();
 const pollTimer = setInterval(poll, 1000);
-setInterval(() => { if (page === "events") loadEvents(); }, 5000);
+loadEvents();
+setInterval(() => { if (page === "events" || page === "live") loadEvents(); }, 4000);

@@ -22,7 +22,7 @@ function locate(frames, t) {
   return [lo, span > 0 ? Math.min(Math.max((t - a.t) / span, 0), 1) : 0];
 }
 
-function draw(ctx, W, H, data, t, layers) {
+export function draw(ctx, W, H, data, t, layers) {
   ctx.clearRect(0, 0, W, H);
   const [i, f] = locate(data.frames, t);
   const A = data.frames[i], B = data.frames[Math.min(i + 1, data.frames.length - 1)];

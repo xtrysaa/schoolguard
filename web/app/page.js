@@ -1,4 +1,5 @@
 import Player from "../components/Player";
+import HeroLive from "../components/HeroLive";
 import m from "../public/replay/metrics.json";
 
 const DOWNLOAD = "https://github.com/xtrysaa/schoolguard/releases/latest/download/SchoolGuard.exe";
@@ -57,10 +58,10 @@ export default function Home() {
           <a className="btn sm" href={DOWNLOAD}>Скачать бесплатно</a>
         </header>
       </div>
-      <div className="herobg"><div className="wrap">
+      <div className="herobg night"><div className="wrap">
         <div className="hero">
           <div>
-            <div className="eyebrow">Раннее предупреждение для школ</div>
+            <div className="eyebrow">Компьютерное зрение для школьных камер</div>
             <h1>Камера замечает драку. Психолог узнаёт через десять секунд.</h1>
             <p className="lead">SchoolGuard подключается к школьным камерам, следит за движениями людей и присылает видеозапись
               момента в Telegram: номер камеры, дата, время. Лица закрыты. Что делать дальше, решает человек.</p>
@@ -72,10 +73,7 @@ export default function Home() {
               <li>Один файл, {SIZE}</li><li>Без установки и регистрации</li><li>Работает без камер: внутри демо-запись</li>
             </ul>
           </div>
-          <div className="herocard">
-            <div className="herocard-cap">Так выглядит сообщение психологу</div>
-            <TgCard thr={m.thresholds.balanced} />
-          </div>
+          <HeroLive />
         </div>
 
         <div className="spec" aria-label="Из чего состоит система">
@@ -123,7 +121,7 @@ export default function Home() {
             Ролики отбирались по качеству изображения, а не по ответу системы, поэтому её ошибки здесь тоже видны и подписаны.</p>
           <div className="stagecta">
             <p><b>То же самое можно увидеть на своём компьютере.</b> В программе есть демо-запись: камеры для первого запуска не нужны.</p>
-            <a className="btn light" href={DOWNLOAD}>Скачать SchoolGuard.exe</a>
+            <a className="btn" href={DOWNLOAD}>Скачать SchoolGuard.exe</a>
           </div>
         </div>
       </div>
@@ -157,10 +155,12 @@ export default function Home() {
               <p>Никаких серверов и командной строки. Скачали файл, запустили, подключили камеру и Telegram.</p></div>
           </div>
           <div className="appgrid">
-            <figure className="shot">
-              <img src="/app-live.jpg" alt="Окно программы SchoolGuard: трансляция камеры со скелетами людей, шкала риска и сигналы" width="800" height="538" />
-              <figcaption>Экран «Наблюдение»: скелеты поверх видео, риск конфликта числом и на шкале, порог тревоги. В демо записи переключаются кнопками.</figcaption>
+            <div><figure className="shot">
+              <img src="/app-live.jpg" alt="Окно программы SchoolGuard: трансляция камеры со скелетами людей, шкала риска и сигналы" width="800" height="518" />
+              <figcaption>Экран «Наблюдение»: скелеты поверх видео, показатели сверху, риск числом и на шкале, справа очередь последних тревог.</figcaption>
             </figure>
+              <div className="tgwrap"><div className="herocard-cap">Так выглядит сообщение психологу</div><TgCard thr={m.thresholds.balanced} /></div>
+            </div>
             <div>
               <ol className="setup">
                 <li><div><h3>Скачайте и запустите</h3><p>Один файл SchoolGuard.exe. Установка не нужна, нейросеть уже внутри. Работает на процессоре, с видеокартой — быстрее.</p></div></li>
@@ -247,7 +247,7 @@ export default function Home() {
           </div>
         </section>
 
-        <div className="dl">
+        <div className="dl night">
           <div><h2>Посмотрите, как это работает, за одну минуту</h2>
             <p>Скачайте файл, запустите и нажмите «Показать на демо-записи». Камеры и Telegram можно подключить потом.</p>
             <ul className="assure dark"><li>Бесплатно</li><li>{SIZE}, Windows 10 и 11</li><li>Без установки</li><li>Видео не уходит в облако</li></ul>
