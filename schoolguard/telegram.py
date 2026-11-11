@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import logging
 import random
+import re
 import threading
 import time
 from pathlib import Path
@@ -23,7 +24,8 @@ CODE_TTL = 600
 class Telegram:
     def __init__(self, store):
         self.store = store
-        self.codes: dict[str, float] = {}       # код -> срок действия
+        now = time.time()                       # коды переживают перезапуск программы
+        self.codes: dict[str, float] = {k: v for k, v in (store.cfg["telegram"].get("codes") or {}).items() if v > now}
         self.offset = 0
         self.error = ""
         self.last_bind: dict | None = None      # последний подключившийся (интерфейс показывает «готово»)
@@ -76,9 +78,15 @@ class Telegram:
         self.codes = {k: v for k, v in self.codes.items() if v > now}
         code = f"{random.SystemRandom().randrange(10 ** 6):06d}"
         self.codes[code] = now + CODE_TTL
+        self._save_codes()
         self.last_bind = None
         self._wake.set()
         return {"code": code, "link": f"https://t.me/{self.cfg['bot_username']}?start={code}", "ttl": CODE_TTL}
+
+    def _save_codes(self):
+        with self.store.lock:
+            self.cfg["codes"] = dict(self.codes)
+            self.store.save()
 
     def remove_recipient(self, chat_id: int):
         with self.store.lock:
@@ -89,6 +97,7 @@ class Telegram:
         if self.codes.get(code, 0) < time.time():
             return False
         del self.codes[code]
+        self._save_codes()
         name = " ".join(x for x in (chat.get("first_name"), chat.get("last_name")) if x) or chat.get("title") or chat.get("username") or str(chat["id"])
         rec = {"chat_id": chat["id"], "name": name, "added": time.time()}
         with self.store.lock:
@@ -139,18 +148,20 @@ class Telegram:
             m = u["message"]
             text = (m.get("text") or "").strip()
             chat = m["chat"]
-            code = text.split()[-1] if text else ""
+            # код принимаем в любом виде: «123456», «123 456», «123-456», «/start 123456»
+            code = re.sub(r"\D", "", text[6:] if text.startswith("/start") else text)
+            log.info("сообщение боту: команда=%s, цифр=%d", text.split()[0][:12] if text.startswith("/") else "-", len(code))
             if text.startswith("/stop"):
                 self.remove_recipient(chat["id"])
                 self.send_text("Вы отключены от уведомлений SchoolGuard.", chat["id"])
-            elif code.isdigit() and len(code) == 6:
+            elif len(code) == 6:
                 if self._bind(chat, code):
                     self.send_text("✅ Готово. Сюда будут приходить видеозаписи возможных конфликтов: номер камеры, дата и время.\n\n"
                                    "Система только предупреждает — решение принимаете вы. Отключиться: /stop", chat["id"])
                 else:
                     self.send_text("Код не подошёл или устарел. Откройте SchoolGuard → Telegram → «Подключить получателя» "
                                    "и получите новый код.", chat["id"])
-            elif text.startswith("/start"):
+            else:
                 self.send_text("Это бот уведомлений SchoolGuard. Чтобы подключиться, откройте приложение SchoolGuard → "
                                "Telegram → «Подключить получателя» и отправьте сюда шесть цифр кода.", chat["id"])
         elif "callback_query" in u:
