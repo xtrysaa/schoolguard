@@ -1,6 +1,7 @@
 "use strict";
 const $ = (s, r = document) => r.querySelector(s);
 const main = $("#main");
+let uiVersion = "";
 let S = null, page = "live", events = [], evFilter = "all", bindInfo = null, bindTimer = null, camDraft = null, lastKey = "";
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -16,10 +17,12 @@ const SENS = { sensitive: "Высокая", balanced: "Средняя", strict: 
 
 // ------------------------------------------------------------------ навигация
 $("#nav").addEventListener("click", e => { const b = e.target.closest("button"); if (b) go(b.dataset.page); });
-function go(p) { page = p; lastKey = ""; if (p === "events") loadEvents(); render(); }
+function go(p) { page = p; lastKey = ""; if (p === "events") loadEvents(true); render(); }
 
 async function poll() {
   try { S = await api("/api/state"); } catch { return; }
+  if (uiVersion && S.version !== uiVersion) { location.reload(); return; }
+  uiVersion = S.version;
   const badge = $("#badge");
   badge.hidden = !S.stats.unreviewed; badge.textContent = S.stats.unreviewed;
   const on = S.cameras.filter(c => c.state === "online").length;
@@ -118,7 +121,14 @@ async function demoStep(id, step) { await api(`/api/cameras/${id}/demo`, { step 
 async function addDemo() { await api("/api/cameras", { demo: true }); page = "live"; lastKey = ""; poll(); }
 
 // ------------------------------------------------------------------ события
-async function loadEvents() { events = await api("/api/events?limit=300"); if (page === "events") renderEvents(); else tick(); }
+let eventsKey = "";
+async function loadEvents(force) {
+  let list; try { list = await api("/api/events?limit=300"); } catch { return; }
+  const key = JSON.stringify(list.map(e => [e.id, e.verdict, e.sent, e.clip]));
+  if (key === eventsKey && !force) return;
+  events = list; eventsKey = key;
+  if (page === "events") renderEvents(); else tick();
+}
 function renderEvents() {
   const list = events.filter(e => evFilter === "all" || (evFilter === "new" ? !e.verdict : e.verdict === evFilter));
   const st = S.stats;
@@ -137,8 +147,8 @@ function evRow(e) {
     <div class="acts"><button class="btn sm primary" onclick="openEvent('${e.id}')">Смотреть запись</button>
       <div class="row"><button class="btn sm" onclick="verdict('${e.id}','confirmed')">Подтвердить</button><button class="btn sm" onclick="verdict('${e.id}','false_alarm')">Ложная</button></div></div></div>`;
 }
-async function verdict(id, v) { await api(`/api/events/${id}/verdict`, { verdict: v }); closeModal(); await loadEvents(); poll(); }
-async function delEvent(id) { if (!confirm("Удалить запись и видео без возможности восстановления?")) return; await api(`/api/events/${id}/delete`, {}); closeModal(); await loadEvents(); poll(); }
+async function verdict(id, v) { await api(`/api/events/${id}/verdict`, { verdict: v }); closeModal(); await loadEvents(true); poll(); }
+async function delEvent(id) { if (!confirm("Удалить запись и видео без возможности восстановления?")) return; await api(`/api/events/${id}/delete`, {}); closeModal(); await loadEvents(true); poll(); }
 function openEvent(id) {
   const e = events.find(x => x.id === id); if (!e) return;
   const m = $("#modal");

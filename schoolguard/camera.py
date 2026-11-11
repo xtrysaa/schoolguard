@@ -258,6 +258,9 @@ class CameraWorker:
             if t - t_prev > 3.0 or self._fresh:               # разрыв потока или другая демо-запись: начинаем заново
                 an.reset(); eng.reset(); buf.clear()
                 self._fresh, prev_gray = False, None
+                if rec is not None:                           # клип тревоги заканчиваем на прежней записи
+                    threading.Thread(target=self._finish_alert, args=(rec,), daemon=True).start()
+                    rec = None
             t_prev = t
             if scene_change(prev_gray, grays[-1][1]) > SCENE_CUT:   # другая сцена: прежние люди и риск к ней не относятся
                 an.reset(); eng.reset()
