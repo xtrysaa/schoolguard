@@ -4,7 +4,7 @@
 следит за движениями людей (скелеты, а не лица) и при признаках конфликта отправляет психологу в Telegram
 видеозапись момента: номер камеры, дата, время. Решение всегда принимает человек.
 
-- Сайт с демо: https://schoolguard.vercel.app
+- Сайт с демо: https://schoolguard-roan.vercel.app
 - Программа: [SchoolGuard.exe](https://github.com/xtrysaa/schoolguard/releases/latest/download/SchoolGuard.exe) (Windows 10/11, установка не нужна)
 
 ## Как пользоваться программой
