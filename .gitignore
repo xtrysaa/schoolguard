@@ -19,3 +19,4 @@ local_clips/
 web/app/local-demo/
 web/public/local-demo/
 reports/before_*/
+.claude/

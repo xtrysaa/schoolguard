@@ -24,8 +24,8 @@ async function poll() {
   badge.hidden = !S.stats.unreviewed; badge.textContent = S.stats.unreviewed;
   const on = S.cameras.filter(c => c.state === "online").length;
   $("#ver").textContent = "v" + S.version;
-  $("#sysline").innerHTML = `<div>КАМЕРЫ <b>${on} / ${S.cameras.length}</b></div><div>ВЫЧИСЛЕНИЯ <b>${S.device === "GPU" ? "видеокарта" : "процессор"}</b></div>`
-    + `<div>TELEGRAM <b class="${S.telegram.recipients.length ? "ok" : "off"}">${S.telegram.recipients.length ? "подключён" : "нет получателей"}</b></div><div>ВРЕМЯ <b>${new Date().toLocaleTimeString("ru-RU")}</b></div>`;
+  $("#sysline").innerHTML = `<div>Камеры <b>${on} / ${S.cameras.length}</b></div><div>Вычисления <b>${S.device === "GPU" ? "видеокарта" : "процессор"}</b></div>`
+    + `<div>Telegram <b class="${S.telegram.recipients.length ? "ok" : "off"}">${S.telegram.recipients.length ? "подключён" : "нет получателей"}</b></div><div>Время <b>${new Date().toLocaleTimeString("ru-RU")}</b></div>`;
   const key = page + "|" + S.cameras.map(c => c.id + c.name + c.enabled + c.source + !!c.demo).join(",") + "|" + S.telegram.connected + S.telegram.recipients.length + "|" + S.settings.sensitivity;
   if (key !== lastKey && !document.activeElement.matches("input, select")) { lastKey = key; render(); }
   else tick();
@@ -56,12 +56,12 @@ function renderLive() {
     <div><span class="lbl">Ждут проверки</span><b data-k="new"></b></div><div><span class="lbl">Получателей в Telegram</span><b data-k="tg"></b></div></div>
   <div class="livewrap"><div class="grid ${cams.length === 1 ? "one" : ""}">${cams.map(c => `
     <div class="tile" data-cam="${c.id}">
-      <div class="thead"><span class="no">CAM ${String(c.no).padStart(2, "0")}</span><b>${esc(c.name)}</b><span class="st"><i class="dot" data-f="dot"></i><span data-f="st"></span></span></div>
+      <div class="thead"><span class="no">№ ${c.no}</span><b>${esc(c.name)}</b><span class="st"><i class="dot" data-f="dot"></i><span data-f="st"></span></span></div>
       ${c.demo ? `<div class="demobar"><span class="lbl">Демо-запись</span><span class="ttl" data-f="dttl"></span><span class="truth" data-f="dtruth"></span>
         <span class="pos" data-f="dpos"></span><button class="btn sm" onclick="demoStep('${c.id}',-1)">‹ Предыдущая</button><button class="btn sm primary" onclick="demoStep('${c.id}',1)">Следующая ›</button></div>` : ""}
-      <div class="view"><span data-f="msg"></span><img alt="" data-f="img"><span class="flag" data-f="flag" hidden>ТРЕВОГА · ПРОВЕРЬТЕ</span></div>
+      <div class="view"><span data-f="msg"></span><img alt="" data-f="img"><span class="flag" data-f="flag" hidden>Тревога</span></div>
       <div class="readout">
-        <div class="num"><b data-f="val">0.00</b><span data-f="lvl">СПОКОЙНО</span></div>
+        <div class="num"><b data-f="val">0.00</b><span data-f="lvl">спокойно</span></div>
         <div class="scale"><span class="lbl">Риск конфликта · порог <span data-f="thrv"></span></span>
           <div class="track"><u data-f="bar"></u><s data-f="thr"></s></div>
           <div class="ticks"><span>0.0</span><span>0.25</span><span>0.5</span><span>0.75</span><span>1.0</span></div></div>
@@ -106,7 +106,7 @@ function tick() {
     f("bar").style.width = Math.min(c.score, 1) * 100 + "%"; f("bar").className = lvl;
     f("thr").style.left = c.threshold * 100 + "%";
     f("val").textContent = c.score.toFixed(2); f("val").className = lvl;
-    f("lvl").textContent = c.alert ? "ТРЕВОГА" : lvl === "warn" ? "РИСК РАСТЁТ" : "СПОКОЙНО"; f("thrv").textContent = c.threshold.toFixed(2);
+    f("lvl").textContent = c.alert ? "тревога" : lvl === "warn" ? "риск растёт" : "спокойно"; f("thrv").textContent = c.threshold.toFixed(2);
     f("flag").hidden = !c.alert; t.classList.toggle("alert", c.alert);
     t.querySelectorAll("[data-sig]").forEach(el => {
       const v = c.signals[el.dataset.sig] || 0;

@@ -142,7 +142,7 @@ export default function Player({ base = "/replay", cam = "CAM 01" }) {
   const level = fr ? now.level : "calm";
   // в тексте называем не больше двух самых сильных сигналов: блок имеет постоянную высоту и не двигает страницу
   const hot = fr ? SIGNALS.filter(([k]) => (fr.c[k] || 0) >= 0.4).sort((a, b) => fr.c[b[0]] - fr.c[a[0]]).slice(0, 2) : [];
-  const status = { calm: "СПОКОЙНО", warn: "РИСК РАСТЁТ", alert: "ТРЕВОГА — ПРОВЕРЬТЕ" }[level];
+  const status = { calm: "Спокойно", warn: "Риск растёт", alert: "Тревога" }[level];
   const meta = index.find((c) => c.id === sel);
   const why = !fr ? "Загрузка…"
     : level === "alert" ? `Запись этого момента уходит психологу в Telegram. ${hot.length ? "Причина: " + hot.map((h) => h[2]).join("; ") + "." : "Причина: характер движения за последние две секунды."}`
@@ -167,7 +167,7 @@ export default function Player({ base = "/replay", cam = "CAM 01" }) {
         </div>
         {data && (
           <div className="timeline">
-            <div className="cap"><span>РИСК КОНФЛИКТА ВО ВРЕМЕНИ</span><span>нажмите, чтобы перемотать</span></div>
+            <div className="cap"><span>Риск конфликта во времени</span><span>нажмите, чтобы перемотать</span></div>
             <Timeline data={data} t={fr ? fr.t : 0} onSeek={seek} />
           </div>
         )}

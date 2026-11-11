@@ -55,31 +55,24 @@ export default function Home() {
           <nav>
             <a href="#demo">Демо</a><a href="#how">Как работает</a><a href="#app">Приложение</a><a href="#accuracy">Точность</a><a href="#faq">Вопросы</a>
           </nav>
-          <a className="btn sm" href={DOWNLOAD}>Скачать бесплатно</a>
+          <a className="btn sm" href={DOWNLOAD}>Скачать</a>
         </header>
       </div>
-      <div className="herobg night"><div className="wrap">
+      <div className="herobg"><div className="wrap">
         <div className="hero">
           <div>
-            <div className="eyebrow">Компьютерное зрение для школьных камер</div>
-            <h1>Камера замечает драку. Психолог узнаёт через десять секунд.</h1>
+            <h1>Камера замечает драку. Психолог узнаёт <mark>через десять секунд</mark>.</h1>
             <p className="lead">SchoolGuard подключается к школьным камерам, следит за движениями людей и присылает видеозапись
               момента в Telegram: номер камеры, дата, время. Лица закрыты. Что делать дальше, решает человек.</p>
             <div className="cta">
-              <a className="btn big" href={DOWNLOAD}>Скачать для Windows — бесплатно</a>
+              <a className="btn big" href={DOWNLOAD}>Скачать для Windows</a>
               <a className="btn ghost" href="#demo">Посмотреть, как видит система</a>
             </div>
-            <ul className="assure">
-              <li>Один файл, {SIZE}</li><li>Без установки и регистрации</li><li>Работает без камер: внутри демо-запись</li>
-            </ul>
+            <p className="under">Один файл, {SIZE}. Установка и регистрация не нужны. Внутри есть демо-записи, так что камеры для первого запуска не обязательны.</p>
           </div>
           <HeroLive />
         </div>
 
-        <div className="spec" aria-label="Из чего состоит система">
-          <b>YOLO11s-Pose</b><i>→</i><b>ByteTrack</b><i>→</i><b>31 признак движения</b><i>→</i><b>XGBoost, {m.trees} деревьев</b><i>→</i><b>риск 0…1</b>
-          <i>·</i><span>ONNX Runtime, без облака</span><i>·</i><span>окно анализа 2 с</span>
-        </div>
       </div></div>
 
       <div className="wrap">
@@ -87,27 +80,9 @@ export default function Home() {
           <div><b>{pct(bal.recall)} из 100</b><span>драк замечено на проверочных видео</span></div>
           <div><b>{pct(bal.fpr)} из 100</b><span>спокойных сцен с ложной тревогой</span></div>
           <div><b>{bal.n}</b><span>записей в проверке, при обучении их не было</span></div>
-          <div><b>0 ₸</b><span>бесплатно, <a href={REPO}>код открыт на GitHub</a></span></div>
+          <div><b>0 ₸</b><span>программа бесплатная, <a href={REPO}>код открыт</a></span></div>
         </div>
 
-        <div className="contrast">
-          <div>
-            <h3>Как бывает сейчас</h3>
-            <ul>
-              <li>Камеры пишут, но в момент драки на экран никто не смотрит.</li>
-              <li>Взрослые узнают о случившемся позже — со слов учеников.</li>
-              <li>Запись ищут вручную, когда разбираться уже поздно.</li>
-            </ul>
-          </div>
-          <div className="with">
-            <h3>С SchoolGuard</h3>
-            <ul>
-              <li>За камерами следит программа: без перерывов и на всех сразу.</li>
-              <li>Психолог получает запись момента, пока конфликт ещё идёт.</li>
-              <li>В сообщении уже есть видео, номер камеры, дата и время.</li>
-            </ul>
-          </div>
-        </div>
       </div>
 
       <div className="stageband" id="demo">
@@ -129,16 +104,15 @@ export default function Home() {
       <div className="wrap">
         <section className="sec" id="how">
           <div className="sechead">
-            <div className="num">01 — Как работает</div>
             <div><h2>От кадра до сообщения в Telegram — пять шагов</h2>
               <p>Картинка целиком в решении не участвует. Система переводит людей в скелеты, считает геометрию их движения и оценивает последние две секунды.</p></div>
           </div>
           <div className="chain">
-            <div><b>01</b><h3>Камера</h3><p>IP-камера, видеорегистратор или веб-камера. Поток остаётся внутри школы.</p></div>
-            <div><b>02</b><h3>Скелеты</h3><p>Нейросеть YOLO11-Pose находит людей и 17 точек тела. Трекер ByteTrack ведёт каждого от кадра к кадру.</p></div>
-            <div><b>03</b><h3>31 признак</h3><p>Скорость рук и ног в сторону другого, захват, падение, окружение, преследование, всплеск движения.</p></div>
-            <div><b>04</b><h3>Оценка риска</h3><p>Градиентный бустинг ({m.trees} деревьев) оценивает окно в две секунды. Тревога, если риск держится выше порога.</p></div>
-            <div><b>05</b><h3>Человек</h3><p>Запись момента уходит в Telegram. Психолог смотрит и отмечает: подтверждено или ложная тревога.</p></div>
+            <div><b>1</b><h3>Камера</h3><p>IP-камера, видеорегистратор или веб-камера. Поток остаётся внутри школы.</p></div>
+            <div><b>2</b><h3>Скелеты</h3><p>Нейросеть YOLO11-Pose находит людей и 17 точек тела. Трекер ByteTrack ведёт каждого от кадра к кадру.</p></div>
+            <div><b>3</b><h3>31 признак</h3><p>Скорость рук и ног в сторону другого, захват, падение, окружение, преследование, всплеск движения.</p></div>
+            <div><b>4</b><h3>Оценка риска</h3><p>Градиентный бустинг ({m.trees} деревьев) оценивает окно в две секунды. Тревога, если риск держится выше порога.</p></div>
+            <div><b>5</b><h3>Человек</h3><p>Запись момента уходит в Telegram. Психолог смотрит и отмечает: подтверждено или ложная тревога.</p></div>
           </div>
           <div className="indent">
             <div className="formula">{`признаки кадра  →  окно 2 с: среднее, максимум, разброс, минимум  →  P(конфликт)
@@ -150,7 +124,6 @@ export default function Home() {
 
         <section className="sec" id="app">
           <div className="sechead">
-            <div className="num">02 — Приложение</div>
             <div><h2>Одна программа для Windows. Настройка занимает несколько минут</h2>
               <p>Никаких серверов и командной строки. Скачали файл, запустили, подключили камеру и Telegram.</p></div>
           </div>
@@ -174,7 +147,6 @@ export default function Home() {
 
         <section className="sec" id="accuracy">
           <div className="sechead">
-            <div className="num">03 — Точность</div>
             <div><h2>Что система умеет, а что нет — в цифрах</h2>
               <p>Проверка на {bal.n} записях, которые не участвовали в обучении. Записи одного исходного видео никогда не попадают одновременно в обучение и проверку.</p></div>
           </div>
@@ -220,7 +192,6 @@ export default function Home() {
 
         <section className="sec" id="privacy">
           <div className="sechead">
-            <div className="num">04 — Приватность</div>
             <div><h2>Система следит за движениями, а не за людьми</h2></div>
           </div>
           <div className="cols2 indent">
@@ -239,7 +210,6 @@ export default function Home() {
 
         <section className="sec" id="faq">
           <div className="sechead">
-            <div className="num">05 — Вопросы</div>
             <div><h2>Что обычно спрашивают перед тем, как скачать</h2></div>
           </div>
           <div className="faq indent">
@@ -247,10 +217,9 @@ export default function Home() {
           </div>
         </section>
 
-        <div className="dl night">
+        <div className="dl">
           <div><h2>Посмотрите, как это работает, за одну минуту</h2>
-            <p>Скачайте файл, запустите и нажмите «Показать на демо-записи». Камеры и Telegram можно подключить потом.</p>
-            <ul className="assure dark"><li>Бесплатно</li><li>{SIZE}, Windows 10 и 11</li><li>Без установки</li><li>Видео не уходит в облако</li></ul>
+            <p>Скачайте файл, запустите и нажмите «Показать на демо-записи». Камеры и Telegram можно подключить потом. Бесплатно, {SIZE}, Windows 10 и 11.</p>
           </div>
           <a className="btn big" href={DOWNLOAD}>Скачать SchoolGuard.exe</a>
         </div>

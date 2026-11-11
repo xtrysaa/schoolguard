@@ -2,9 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { draw } from "./Player";
 
-// Живая карточка первого экрана: настоящая запись из проверочной части и то, что система посчитала на ней.
-// Никакой постановки: числа берутся из того же JSON, что и в большом плеере ниже.
-export default function HeroLive({ clip = "clip02", cam = "CAM 02", place = "Двор" }) {
+// Запись первого экрана: настоящий ролик из проверочной части и то, что система посчитала на нём.
+export default function HeroLive({ clip = "clip02" }) {
   const [data, setData] = useState(null);
   const [now, setNow] = useState({ i: 0, level: "calm" });
   const vref = useRef(null), cref = useRef(null), dref = useRef(null);
@@ -32,23 +31,19 @@ export default function HeroLive({ clip = "clip02", cam = "CAM 02", place = "Д�
 
   const fr = data?.frames[Math.min(now.i, (data?.frames.length || 1) - 1)];
   const level = fr ? now.level : "calm";
-  const status = { calm: "Спокойно", warn: "Риск растёт", alert: "Тревога" }[level];
+  const status = { calm: "спокойно", warn: "риск растёт", alert: "тревога" }[level];
   return (
-    <div className="live" aria-label="Пример работы системы на записи из проверочной части">
+    <figure className="live">
       <div className="live-frame" style={{ aspectRatio: data ? `${data.width}/${data.height}` : "16/9" }}>
         <video ref={vref} src={`/replay/${clip}.mp4`} autoPlay muted loop playsInline />
         <canvas ref={cref} />
-        <span className="live-osd">{cam} · {place}</span>
-        <span className={"live-state " + level}>{status}</span>
       </div>
-      <div className={"chip-risk " + level}>
-        <b>{fr ? fr.s.toFixed(2) : "0.00"}</b>
-        <span>риск конфликта<br />порог {data ? data.t_high.toFixed(2) : "0.65"}</span>
-      </div>
-      <div className="chip-people"><b>{fr ? fr.p.length : 0}</b><span>человек<br />в кадре</span></div>
-      <div className={"chip-tg" + (level === "alert" ? " on" : "")}>
-        <i />{level === "alert" ? "Запись отправлена психологу в Telegram" : "Психолог получит запись при тревоге"}
-      </div>
-    </div>
+      <figcaption>
+        <span>Риск <b className={level}>{fr ? fr.s.toFixed(2) : "0.00"}</b></span>
+        <span>порог <b>{data ? data.t_high.toFixed(2) : "0.65"}</b></span>
+        <span>людей в кадре <b>{fr ? fr.p.length : 0}</b></span>
+        <span className={"st " + level}>{status}</span>
+      </figcaption>
+    </figure>
   );
 }
