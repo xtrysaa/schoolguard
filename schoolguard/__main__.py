@@ -18,6 +18,29 @@ def _alive(port: int) -> bool:
         return False
 
 
+def _replace_old(port: int) -> bool:
+    """True, если на порту работает другая версия программы и её удалось закрыть.
+
+    Программа продолжает работать после закрытия окна, поэтому без этой проверки скачанная новая версия
+    просто открывала бы окно старой.
+    """
+    import json
+    from . import __version__
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/state", timeout=3) as r:
+            if json.loads(r.read()).get("version") == __version__:
+                return False
+        urllib.request.urlopen(urllib.request.Request(f"http://127.0.0.1:{port}/api/quit", data=b"", method="POST"), timeout=3)
+    except Exception:
+        return False
+    for _ in range(40):
+        if not _alive(port):
+            time.sleep(0.5)
+            return True
+        time.sleep(0.25)
+    return False
+
+
 def _running(port_file) -> int | None:
     """Порт уже запущенной программы (по файлу с последним портом и по списку известных портов)."""
     cand = []
@@ -44,6 +67,8 @@ def main():
     if "--port" in sys.argv:                # отдельная копия для проверки: свой порт, без поиска уже запущенной
         ports = (int(sys.argv[sys.argv.index("--port") + 1]),)
     port = None if ports is not PORTS else _running(port_file)
+    if port and _replace_old(port):        # работала старая версия: закрыли её, запускаемся сами
+        port = None
     if port:                            # уже запущено: просто показываем окно
         if not background:
             open_window(f"http://127.0.0.1:{port}/")
