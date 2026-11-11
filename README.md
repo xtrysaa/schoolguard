@@ -84,6 +84,7 @@ pip install -r requirements-dev.txt
 python tools/extract_dets.py --out data/dets_s --gt путь/к/groundtruth.json   # видео -> детекции поз (.npz), один раз
 python tools/train.py                                                         # признаки -> модель -> пороги -> reports/v2_metrics.json
 python tools/export_demo.py --set surv --out web/public/replay --n 6          # ролики для сайта (только из теста)
+python tools/make_demo.py                                                     # демо-запись программы + проверка ответов на ней
 pyinstaller desktop/SchoolGuard.spec --noconfirm                              # dist/SchoolGuard.exe
 ```
 

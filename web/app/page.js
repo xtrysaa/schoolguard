@@ -7,6 +7,35 @@ const pct = (v) => Math.round(v * 100);
 const SOURCES = { rlvs: "RLVS — съёмка с телефонов и из интернета", cctv: "CCTV-Fights — камеры наблюдения", cctvmob: "CCTV-Fights — телефоны, видеорегистраторы", surv: "Surv — уличные и офисные камеры" };
 const MODES = [["sensitive", "Высокая"], ["balanced", "Средняя (по умолчанию)"], ["strict", "Низкая"]];
 
+const SIZE = "126 МБ";
+const FAQ = [
+  ["Сколько это стоит?", "Нисколько. Программа бесплатная, исходный код открыт на GitHub. Платных версий и подписок нет."],
+  ["Можно попробовать без камер?", "Да. В программе есть демонстрационная запись: на ней видно скелеты, шкалу риска и тревогу. В углу кадра подписано, что на самом деле происходит в сцене, чтобы ответ системы можно было сверить."],
+  ["Windows предупреждает, что файл неизвестен. Это нормально?", "Да. У программы нет платной цифровой подписи, поэтому SmartScreen показывает предупреждение при первом запуске. Нажмите «Подробнее», затем «Выполнить в любом случае». Код программы открыт, его можно проверить и собрать самостоятельно."],
+  ["Нужен ли мощный компьютер?", "Программа рассчитана на обычный компьютер и считает на процессоре; с видеокартой работает быстрее. Проверялась она на ноутбуке с видеокартой, на компьютере без видеокарты кадров в секунду будет меньше."],
+  ["Куда уходит видео с камер?", "Никуда. Обработка идёт на компьютере школы. Наружу отправляются только короткие записи тревог — в Telegram тем, кого вы сами подключили. Лица на записях закрыты."],
+  ["Что будет при ложной тревоге?", "Тревога — это просьба посмотреть запись, а не вывод. Психолог нажимает «Ложная тревога», отметка попадает в журнал. Если ложных тревог много, чувствительность уменьшается одной настройкой."],
+  ["Подойдут ли наши камеры?", "Подойдёт IP-камера или видеорегистратор с потоком RTSP: это большинство камер Hikvision, Dahua и похожих. Также работают веб-камера и видеофайл. На настоящих школьных камерах программа пока не проверялась."],
+];
+
+function TgCard({ thr }) {
+  return (
+    <div className="tg" aria-label="Пример сообщения в Telegram">
+      <div className="msg">
+        <div className="vid" style={{ backgroundImage: "url(/app-alert.jpg)" }} />
+        <div className="txt">{`⚠️ Возможный конфликт
+
+📷 Камера № 2 — Коридор, 2 этаж
+📅 Дата: 11.11.2026
+🕒 Время: 13:45:07
+📈 Риск: 0.81 (порог ${thr.toFixed(2)})
+Признаки: удары и резкие движения, плотный контакт`}</div>
+      </div>
+      <div className="kb"><span>✅ Подтвердить</span><span>❌ Ложная тревога</span></div>
+    </div>
+  );
+}
+
 function Logo() {
   return (
     <a className="logo" href="#top" aria-label="SchoolGuard">
@@ -19,14 +48,16 @@ export default function Home() {
   const bal = m.clip_test.balanced.all;
   return (
     <>
-      <div className="wrap" id="top">
-        <header className="top">
+      <div className="topbar" id="top">
+        <header className="top wrap">
           <Logo />
           <nav>
-            <a href="#demo">Демо</a><a href="#how">Как работает</a><a href="#app">Приложение</a><a href="#accuracy">Точность</a><a href="#privacy">Приватность</a>
+            <a href="#demo">Демо</a><a href="#how">Как работает</a><a href="#app">Приложение</a><a href="#accuracy">Точность</a><a href="#faq">Вопросы</a>
           </nav>
-          <a className="btn sm" href={DOWNLOAD}>Скачать</a>
+          <a className="btn sm" href={DOWNLOAD}>Скачать бесплатно</a>
         </header>
+      </div>
+      <div className="wrap">
 
         <div className="hero">
           <div>
@@ -35,16 +66,42 @@ export default function Home() {
             <p className="lead">SchoolGuard подключается к школьным камерам, следит за движениями людей и присылает видеозапись
               момента в Telegram: номер камеры, дата, время. Лица закрыты. Что делать дальше, решает человек.</p>
             <div className="cta">
-              <a className="btn" href={DOWNLOAD}>Скачать для Windows</a>
+              <a className="btn big" href={DOWNLOAD}>Скачать для Windows — бесплатно</a>
               <a className="btn ghost" href="#demo">Посмотреть, как видит система</a>
             </div>
+            <ul className="assure">
+              <li>Один файл, {SIZE}</li><li>Без установки и регистрации</li><li>Работает без камер: внутри демо-запись</li>
+            </ul>
           </div>
-          <div className="facts" aria-label="Коротко о системе">
-            <div><span>Замечает драк на проверочных видео</span><span>{pct(bal.recall)} из 100</span></div>
-            <div><span>Ложных тревог на спокойных сценах</span><span>{pct(bal.fpr)} из 100</span></div>
-            <div><span>Проверено на видео, не участвовавших в обучении</span><span>{bal.n} записей</span></div>
-            <div><span>Где работает</span><span>компьютер школы, без облака</span></div>
-            <div><span>Исходный код</span><span><a href={REPO}>открыт на GitHub</a></span></div>
+          <div className="herocard">
+            <div className="herocard-cap">Так выглядит сообщение психологу</div>
+            <TgCard thr={m.thresholds.balanced} />
+          </div>
+        </div>
+
+        <div className="facts" aria-label="Коротко о системе">
+          <div><b>{pct(bal.recall)} из 100</b><span>драк замечено на проверочных видео</span></div>
+          <div><b>{pct(bal.fpr)} из 100</b><span>спокойных сцен с ложной тревогой</span></div>
+          <div><b>{bal.n}</b><span>записей в проверке, при обучении их не было</span></div>
+          <div><b>0 ₸</b><span>бесплатно, <a href={REPO}>код открыт на GitHub</a></span></div>
+        </div>
+
+        <div className="contrast">
+          <div>
+            <h3>Как бывает сейчас</h3>
+            <ul>
+              <li>Камеры пишут, но в момент драки на экран никто не смотрит.</li>
+              <li>Взрослые узнают о случившемся позже — со слов учеников.</li>
+              <li>Запись ищут вручную, когда разбираться уже поздно.</li>
+            </ul>
+          </div>
+          <div className="with">
+            <h3>С SchoolGuard</h3>
+            <ul>
+              <li>За камерами следит программа: без перерывов и на всех сразу.</li>
+              <li>Психолог получает запись момента, пока конфликт ещё идёт.</li>
+              <li>В сообщении уже есть видео, номер камеры, дата и время.</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -58,6 +115,10 @@ export default function Home() {
           <Player />
           <p className="fine">Записи из открытого набора Fight Detection Surv (лицензия MIT). Все они из проверочной части: при обучении система их не видела.
             Ролики отбирались по качеству изображения, а не по ответу системы, поэтому её ошибки здесь тоже видны и подписаны.</p>
+          <div className="stagecta">
+            <p><b>То же самое можно увидеть на своём компьютере.</b> В программе есть демо-запись: камеры для первого запуска не нужны.</p>
+            <a className="btn light" href={DOWNLOAD}>Скачать SchoolGuard.exe</a>
+          </div>
         </div>
       </div>
 
@@ -101,19 +162,6 @@ export default function Home() {
                 <li><div><h3>Привяжите Telegram</h3><p>Наведите телефон на QR-код и нажмите «Старт» в боте. Или отправьте боту шесть цифр. Вводить идентификаторы чата не нужно.</p></div></li>
                 <li><div><h3>Получайте записи</h3><p>При тревоге приходит видео: пять секунд до события и пять после. В подписи — номер камеры, дата и время.</p></div></li>
               </ol>
-              <div className="tg" aria-label="Пример сообщения в Telegram">
-                <div className="msg">
-                  <div className="vid" style={{ backgroundImage: "url(/app-alert.jpg)" }} />
-                  <div className="txt">{`⚠️ Возможный конфликт
-
-📷 Камера № 2 — Коридор, 2 этаж
-📅 Дата: 11.11.2026
-🕒 Время: 13:45:07
-📈 Риск: 0.81 (порог ${m.thresholds.balanced.toFixed(2)})
-Признаки: удары и резкие движения, плотный контакт`}</div>
-                </div>
-                <div className="kb"><span>✅ Подтвердить</span><span>❌ Ложная тревога</span></div>
-              </div>
             </div>
           </div>
         </section>
@@ -183,10 +231,22 @@ export default function Home() {
           </div>
         </section>
 
+        <section className="sec" id="faq">
+          <div className="sechead">
+            <div className="num">05 — Вопросы</div>
+            <div><h2>Что обычно спрашивают перед тем, как скачать</h2></div>
+          </div>
+          <div className="faq indent">
+            {FAQ.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}
+          </div>
+        </section>
+
         <div className="dl">
-          <div><h2>Попробуйте на своём компьютере</h2>
-            <p>В программе есть демонстрационная запись: работу можно увидеть за минуту, без камер. Windows 10 или 11, 64 бита.</p></div>
-          <a className="btn" href={DOWNLOAD}>Скачать SchoolGuard.exe</a>
+          <div><h2>Посмотрите, как это работает, за одну минуту</h2>
+            <p>Скачайте файл, запустите и нажмите «Показать на демо-записи». Камеры и Telegram можно подключить потом.</p>
+            <ul className="assure dark"><li>Бесплатно</li><li>{SIZE}, Windows 10 и 11</li><li>Без установки</li><li>Видео не уходит в облако</li></ul>
+          </div>
+          <a className="btn big" href={DOWNLOAD}>Скачать SchoolGuard.exe</a>
         </div>
 
         <footer>

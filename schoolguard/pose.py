@@ -90,6 +90,20 @@ class PoseDetector:
         return self.detect_batch([frame])[0]
 
 
+def scene_change(prev_gray, gray) -> float:
+    """Доля пикселей, резко изменившихся между соседними кадрами анализа (0..1).
+
+    При смене сцены (склейка в записи, переключение канала регистратора) меняется почти весь кадр,
+    при обычном движении людей — малая часть. По этому числу анализ начинают заново.
+    """
+    if prev_gray is None or prev_gray.shape != gray.shape:
+        return 0.0
+    return float((cv2.absdiff(prev_gray, gray) > 28).mean())
+
+
+SCENE_CUT = 0.45
+
+
 def motion_energy(prev_gray, gray, dets: np.ndarray, scale: float):
     """Энергия движения по межкадровой разности (серые кадры шириной ~320).
 

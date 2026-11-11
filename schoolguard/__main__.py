@@ -40,8 +40,11 @@ def main():
     background = "--background" in sys.argv
     home = app_dir()
     port_file = home / "port.txt"
-    port = _running(port_file)
-    if port:                               # уже запущено: просто показываем окно
+    ports = PORTS
+    if "--port" in sys.argv:                # отдельная копия для проверки: свой порт, без поиска уже запущенной
+        ports = (int(sys.argv[sys.argv.index("--port") + 1]),)
+    port = None if ports is not PORTS else _running(port_file)
+    if port:                            # уже запущено: просто показываем окно
         if not background:
             open_window(f"http://127.0.0.1:{port}/")
         return
@@ -53,7 +56,7 @@ def main():
     try:
         from .server import Core, serve
         core = Core()
-        srv = serve(core, PORTS)
+        srv = serve(core, ports)
         url = f"http://127.0.0.1:{srv.server_address[1]}/"
         port_file.write_text(str(srv.server_address[1]))
         log.info("SchoolGuard запущен: %s, устройство %s", url, core.detector.device)

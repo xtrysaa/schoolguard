@@ -19,7 +19,7 @@ import numpy as np
 from .draw import draw_hud, draw_people, pixelate_heads
 from .engine import RiskEngine
 from .pipeline import Analyzer
-from .pose import motion_energy, small_gray
+from .pose import SCENE_CUT, motion_energy, scene_change, small_gray
 
 log = logging.getLogger("schoolguard.camera")
 os.environ.setdefault("OPENCV_FFMPEG_CAPTURE_OPTIONS", "rtsp_transport;tcp|stimeout;8000000")
@@ -205,6 +205,7 @@ class CameraWorker:
         buf: deque = deque()                                  # (t, jpeg) — кольцевой буфер «до события»
         rec = None                                            # активная запись клипа
         last_n, t_prev, period = 0, 0.0, 1.0 / ANALYSIS_FPS
+        prev_gray = None
         sig_hist: deque = deque(maxlen=30)
         fps_t = deque(maxlen=20)
         while not self._stop.is_set():
@@ -223,6 +224,9 @@ class CameraWorker:
             if t - t_prev > 3.0:                              # разрыв потока: начинаем заново
                 an.reset(); eng.reset(); buf.clear()
             t_prev = t
+            if scene_change(prev_gray, grays[-1][1]) > SCENE_CUT:   # другая сцена: прежние люди и риск к ней не относятся
+                an.reset(); eng.reset()
+            prev_gray = grays[-1][1]
             try:
                 with _infer_lock:
                     dets = self.detector.detect(frame)
