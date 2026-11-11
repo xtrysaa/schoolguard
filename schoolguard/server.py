@@ -16,7 +16,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from . import __version__
-from .camera import CameraWorker, list_webcams, probe
+from .camera import CameraWorker, demo_scenes, list_webcams, probe
 from .features import SIGNALS
 from .gbm import GBM
 from .pose import PoseDetector
@@ -45,7 +45,7 @@ class Core:
         self.workers: dict[str, CameraWorker] = {}
         self.lock = threading.RLock()
         self.quit = threading.Event()
-        self.demo_video = res / "assets" / "demo.mp4"
+        self.demo_ok = bool(demo_scenes())
         for cam in self.store.cfg["cameras"]:
             if cam.get("enabled", True):
                 self._start(cam)
@@ -101,7 +101,7 @@ class Core:
         th = (self.model.meta.get("thresholds") if self.model else None) or {}
         return {"version": __version__, "cameras": cams, "settings": cfg["settings"], "telegram": self.telegram.status(),
                 "stats": self.store.stats(), "device": self.detector.device, "model": bool(self.model),
-                "thresholds": th, "signals": SIGNALS, "demo_available": self.demo_video.exists(),
+                "thresholds": th, "signals": SIGNALS, "demo_available": self.demo_ok,
                 "home": str(self.store.home)}
 
     def add_camera(self, body: dict) -> dict:
@@ -130,6 +130,15 @@ class Core:
         else:
             self._stop(cam_id)
         return cam
+
+    def demo_switch(self, cam_id: str, body: dict) -> dict:
+        """Демо-камера: следующая/предыдущая запись (step) или запись по номеру (index)."""
+        w = self.workers.get(cam_id)
+        if not w or not w.is_demo:
+            raise KeyError(cam_id)
+        idx = w.set_demo(int(body["index"]) if "index" in body else w.demo_idx + int(body.get("step", 1)))
+        self.store.update_camera(cam_id, {"demo_scene": idx})
+        return {"ok": True, "index": idx}
 
     def remove_camera(self, cam_id: str):
         self._stop(cam_id)
@@ -289,6 +298,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(r)
             if m := re.match(r"/api/cameras/(\w+)$", p):
                 return self._json(core.update_camera(m.group(1), b))
+            if m := re.match(r"/api/cameras/(\w+)/demo$", p):
+                return self._json(core.demo_switch(m.group(1), b))
             if m := re.match(r"/api/cameras/(\w+)/delete$", p):
                 core.remove_camera(m.group(1))
                 return self._json({"ok": True})

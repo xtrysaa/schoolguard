@@ -6,7 +6,7 @@ datas = [
     (str(ROOT / "schoolguard" / "ui"), "schoolguard/ui"),
     (str(ROOT / "models" / "onnx" / "yolo11s-pose.onnx"), "models/onnx"),
     (str(ROOT / "models" / "sg_model.npz"), "models"),
-    (str(ROOT / "assets" / "demo.mp4"), "assets"),
+    (str(ROOT / "assets" / "demo"), "assets/demo"),
 ]
 a = Analysis(
     [str(ROOT / "desktop" / "SchoolGuard.py")],

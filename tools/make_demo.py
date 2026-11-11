@@ -1,4 +1,6 @@
-"""Сборка демонстрационной записи программы (assets/demo.mp4) и проверка, что программа показывает на ней.
+"""Сборка демонстрационных записей программы (assets/demo/*.mp4) и проверка, что программа показывает на них.
+
+Каждая сцена — отдельный файл: в программе их переключают кнопками, а в Telegram уходит запись одной сцены.
 
 Сцены — клипы Fight Detection Surv (MIT) из тестовой части. Тревога по устройству системы возможна не раньше
 чем через ~1,8 с после начала сцены, а клипы длятся 2–3 с, поэтому каждая сцена идёт «вперёд и назад»:
@@ -26,9 +28,10 @@ from schoolguard.pipeline import Analyzer
 from schoolguard.pose import SCENE_CUT, PoseDetector, motion_energy, scene_change, small_gray
 
 W, H, FPS = 640, 360, 25.0
-SCENES = [("noFight/nofi114", 0), ("fight/fi073", 1), ("noFight/nofi028", 0), ("fight/fi005", 1),
-          ("noFight/nofi138", 0), ("fight/fi070", 1)]
-OUT = ROOT / "assets" / "demo.mp4"
+SCENES = [("fight/fi073", 1, "Драка во дворе"), ("noFight/nofi114", 0, "Люди проходят мимо"),
+          ("fight/fi005", 1, "Драка в помещении"), ("noFight/nofi028", 0, "Обычный разговор"),
+          ("fight/fi070", 1, "Драка на улице"), ("noFight/nofi138", 0, "Спокойная сцена")]
+OUT = ROOT / "assets" / "demo"
 
 
 def read_scene(name: str) -> list[np.ndarray]:
@@ -63,64 +66,62 @@ def label(frame: np.ndarray, fight: int) -> np.ndarray:
     return cv2.cvtColor(np.asarray(im), cv2.COLOR_RGB2BGR)
 
 
-def build() -> list[tuple[float, float, int, str]]:
+def build():
+    import json
+
     import imageio_ffmpeg
-    ff = subprocess.Popen([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "bgr24",
-                           "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-an", "-vcodec", "libx264", "-crf", "23",
-                           "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(OUT)], stdin=subprocess.PIPE)
-    plan, n = [], 0
-    for name, fight in SCENES:
-        frames = read_scene(name)
-        for f in frames:
+    OUT.mkdir(parents=True, exist_ok=True)
+    for old in OUT.glob("*.mp4"):
+        old.unlink()
+    index = []
+    for i, (name, fight, title) in enumerate(SCENES, 1):
+        ff = subprocess.Popen([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "bgr24",
+                               "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-an", "-vcodec", "libx264", "-crf", "23",
+                               "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(OUT / f"{i:02d}.mp4")], stdin=subprocess.PIPE)
+        for f in read_scene(name):
             ff.stdin.write(label(f, fight).tobytes())
-        plan.append((n / FPS, (n + len(frames)) / FPS, fight, name))
-        n += len(frames)
-    ff.stdin.close(); ff.wait()
-    return plan
+        ff.stdin.close(); ff.wait()
+        index.append({"file": f"{i:02d}.mp4", "title": title, "fight": fight})
+    (OUT / "scenes.json").write_text(json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
-def check(plan):
-    """Прогон записи тем же способом, что и камера в программе (два круга: проверяем и стык конца с началом)."""
+def check():
+    """Каждая запись проигрывается по кругу три раза так же, как камера в программе: драка должна дать тревогу,
+    спокойная сцена — нет (в том числе на стыке конца записи с началом)."""
+    import json
     model = GBM(ROOT / "models" / "sg_model.npz")
     det = PoseDetector(ROOT / "models" / "onnx" / "yolo11s-pose.onnx")
-    an, eng = Analyzer(), RiskEngine(model, t_high=model.meta["thresholds"]["balanced"])
-    cap = cv2.VideoCapture(str(OUT))
-    frames = []
-    while True:
-        ok, f = cap.read()
-        if not ok:
-            break
-        frames.append(f)
-    total = len(frames) / FPS
-    stat = {i: {"alert": 0.0, "peak": 0.0, "first": None} for i in range(len(plan))}
-    prev, cuts, ok_all = None, [], True
-    for i in range(0, 2 * len(frames), 2):                          # 12,5 кадров/с
-        t = i / FPS
-        f = frames[i % len(frames)]
-        gray, sc = small_gray(f)
-        ch = scene_change(prev, gray)
-        if ch > SCENE_CUT:
-            an.reset(); eng.reset(); cuts.append(round(t % total, 2))
-        dets = det.detect(f)
-        gmot, mot = motion_energy(prev, gray, dets, sc)
-        prev = gray
-        row, people, info = an.step(dets, t, mot, gmot)
-        st = eng.update(row, t)
-        if i >= len(frames):                                        # статистика по второму кругу
-            tt = t - total
-            k = next(j for j, p in enumerate(plan) if p[0] <= tt < p[1] or j == len(plan) - 1)
-            s = stat[k]
-            s["peak"] = max(s["peak"], st.score)
+    ok_all = True
+    for sc_ in json.loads((OUT / "scenes.json").read_text(encoding="utf-8")):
+        cap = cv2.VideoCapture(str(OUT / sc_["file"]))
+        frames = []
+        while True:
+            ok, f = cap.read()
+            if not ok:
+                break
+            frames.append(f)
+        an, eng = Analyzer(), RiskEngine(model, t_high=model.meta["thresholds"]["balanced"])
+        prev, alert, first, peak, cuts = None, 0.0, None, 0.0, 0
+        for i in range(0, 3 * len(frames), 2):                      # 12,5 кадров/с
+            t = i / FPS
+            f = frames[i % len(frames)]
+            gray, sc = small_gray(f)
+            if scene_change(prev, gray) > SCENE_CUT:
+                an.reset(); eng.reset(); cuts += 1
+            dets = det.detect(f)
+            gmot, mot = motion_energy(prev, gray, dets, sc)
+            prev = gray
+            row, people, info = an.step(dets, t, mot, gmot)
+            st = eng.update(row, t)
+            peak = max(peak, st.score)
             if st.alert_active:
-                s["alert"] += 2 / FPS
-                s["first"] = s["first"] if s["first"] is not None else round(tt - plan[k][0], 2)
-    print("смены сцены найдены на:", sorted(set(cuts)))
-    for k, (a, b, fight, name) in enumerate(plan):
-        s = stat[k]
-        good = (s["alert"] >= 1.5) if fight else (s["alert"] == 0)
+                alert += 2 / FPS
+                first = first if first is not None else round(t, 2)
+        total = 3 * len(frames) / FPS
+        good = (alert >= 0.5 * total) if sc_["fight"] else (alert == 0)
         ok_all &= good
-        print(f"{'OK ' if good else 'ERR'} {name:18s} {b - a:4.1f} с  {'драка ' if fight else 'спокойно'}  тревога {s['alert']:.1f} с"
-              f" (с {s['first']} с)  пик {s['peak']:.2f}")
+        print(f"{'OK ' if good else 'ERR'} {sc_['file']} {sc_['title']:22s} {'драка   ' if sc_['fight'] else 'спокойно'} "
+              f"тревога {alert:4.1f} из {total:4.1f} с (с {first} с)  пик {peak:.2f}  ложных смен сцены: {cuts}")
     print("ИТОГ:", "демо показывает верно" if ok_all else "ЕСТЬ ОШИБКИ")
     return ok_all
 
@@ -129,14 +130,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true")
     a = ap.parse_args()
-    if a.check:
-        n, plan = 0, []
-        for name, fight in SCENES:
-            k = len(read_scene(name))
-            plan.append((n / FPS, (n + k) / FPS, fight, name)); n += k
-    else:
-        plan = build()
-    sys.exit(0 if check(plan) else 1)
+    if not a.check:
+        build()
+    sys.exit(0 if check() else 1)
 
 
 if __name__ == "__main__":

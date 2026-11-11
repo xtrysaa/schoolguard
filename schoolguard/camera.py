@@ -24,16 +24,28 @@ from .pose import SCENE_CUT, motion_energy, scene_change, small_gray
 log = logging.getLogger("schoolguard.camera")
 os.environ.setdefault("OPENCV_FFMPEG_CAPTURE_OPTIONS", "rtsp_transport;tcp|stimeout;8000000")
 ANALYSIS_FPS = 12.5
+DEMO_KEEP = 5
 MAX_W = 960
 _infer_lock = threading.Lock()      # одна нейросеть на все камеры: вызовы по очереди
 
 
-def open_capture(source: str):
+def demo_scenes() -> list[dict]:
+    """Встроенные демонстрационные записи: [{file, title, fight}]."""
+    import json
+    from .store import resource_dir
+    try:
+        return json.loads((resource_dir() / "assets" / "demo" / "scenes.json").read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+
+def open_capture(source: str, demo_idx: int = 0):
     """-> (cap, is_file). Веб-камера по номеру, файл по пути, остальное — сетевой поток (RTSP/HTTP)."""
     s = str(source).strip().strip('"')
-    if s == "demo":                      # встроенная демонстрационная запись
+    if s == "demo":                      # встроенная демонстрационная запись (одна сцена, по кругу)
         from .store import resource_dir
-        return cv2.VideoCapture(str(resource_dir() / "assets" / "demo.mp4")), True
+        sc = demo_scenes()
+        return cv2.VideoCapture(str(resource_dir() / "assets" / "demo" / sc[demo_idx % len(sc)]["file"])), True
     if s.isdigit():
         cap = cv2.VideoCapture(int(s), cv2.CAP_DSHOW)
         if not cap.isOpened():
@@ -113,6 +125,11 @@ class CameraWorker:
         self.jpeg: bytes | None = None
         self.seq = 0
         self.last_alert_ts = 0.0
+        self.is_demo = str(cam["source"]) == "demo"
+        self.demo_idx = int(cam.get("demo_scene") or 0)
+        self._switch = False                # демо: открыть другую запись
+        self._fresh = False                 # демо: начать анализ и буфер клипа заново
+        self._demo_alerted = False          # демо: одно событие на выбранную запись
         self._latest = None                 # (кадр, время, номер)
         self._grays: deque = deque(maxlen=12)
         self._stop = threading.Event()
@@ -132,10 +149,24 @@ class CameraWorker:
         return float(th.get(sens, th.get("balanced", 0.5)))
 
     def status(self) -> dict:
-        return {"id": self.id, "state": self.state, "error": self.error, "score": round(self.score, 3),
-                "threshold": round(self.threshold(), 3), "alert": self.alert_active, "people": self.people_n,
-                "fps": round(self.fps, 1), "signals": {k: round(v, 2) for k, v in self.signals.items()},
-                "last_alert": self.last_alert_ts}
+        st = {"id": self.id, "state": self.state, "error": self.error, "score": round(self.score, 3),
+              "threshold": round(self.threshold(), 3), "alert": self.alert_active, "people": self.people_n,
+              "fps": round(self.fps, 1), "signals": {k: round(v, 2) for k, v in self.signals.items()},
+              "last_alert": self.last_alert_ts}
+        if self.is_demo:
+            sc = demo_scenes()
+            if sc:
+                i = self.demo_idx % len(sc)
+                st["demo"] = {"idx": i, "n": len(sc), "title": sc[i]["title"], "fight": bool(sc[i]["fight"])}
+        return st
+
+    def set_demo(self, idx: int) -> int:
+        """Переключить демо-камеру на другую запись."""
+        n = max(len(demo_scenes()), 1)
+        self.demo_idx = idx % n
+        self._switch = self._fresh = True
+        self._demo_alerted = False
+        return self.demo_idx
 
     def stop(self):
         self._stop.set()
@@ -148,7 +179,7 @@ class CameraWorker:
         while not self._stop.is_set():
             self.state = "connecting"
             try:
-                cap, is_file = open_capture(self.cam["source"])
+                cap, is_file = open_capture(self.cam["source"], self.demo_idx)
             except Exception as e:
                 cap, is_file, self.error = None, False, str(e)
             if cap is None or not cap.isOpened():
@@ -160,7 +191,7 @@ class CameraWorker:
                 fps = 25.0
             self.error = ""
             t_next, fails = time.monotonic(), 0
-            while not self._stop.is_set():
+            while not self._stop.is_set() and not self._switch:
                 ok, frame = cap.read()
                 if not ok or frame is None:
                     if is_file:                               # файл закончился: проигрываем по кругу (демо-режим)
@@ -194,6 +225,9 @@ class CameraWorker:
                     else:
                         t_next = time.monotonic()
             cap.release()
+            if self._switch:                                  # демо: сразу открываем выбранную запись
+                self._switch = False
+                continue
             if not self._stop.is_set():
                 self.state, self.error = "offline", "Сигнал потерян. Повторное подключение…"
                 self._stop.wait(3)
@@ -221,8 +255,9 @@ class CameraWorker:
                 grays = list(self._grays)
             if t - t_prev < period * 0.9:
                 continue
-            if t - t_prev > 3.0:                              # разрыв потока: начинаем заново
+            if t - t_prev > 3.0 or self._fresh:               # разрыв потока или другая демо-запись: начинаем заново
                 an.reset(); eng.reset(); buf.clear()
+                self._fresh, prev_gray = False, None
             t_prev = t
             if scene_change(prev_gray, grays[-1][1]) > SCENE_CUT:   # другая сцена: прежние люди и риск к ней не относятся
                 an.reset(); eng.reset()
@@ -270,8 +305,10 @@ class CameraWorker:
                 if t >= rec["until"]:
                     threading.Thread(target=self._finish_alert, args=(rec,), daemon=True).start()
                     rec = None
-            elif st.alert_started and time.time() - self.last_alert_ts >= float(self.settings().get("cooldown_s", 45)):
+            elif st.alert_started and not (self.is_demo and self._demo_alerted) \
+                    and time.time() - self.last_alert_ts >= (0 if self.is_demo else float(self.settings().get("cooldown_s", 45))):
                 self.last_alert_ts = time.time()
+                self._demo_alerted = True                     # демо-запись идёт по кругу: одно событие на запись
                 keys = st.signals.keys()
                 avg = {k: float(np.mean([s[k] for s in sig_hist])) for k in keys}
                 rec = {"id": uuid.uuid4().hex[:12], "ts": time.time(), "frames": list(buf), "peak": st.score,
@@ -288,6 +325,9 @@ class CameraWorker:
               "camera_name": self.cam["name"], "peak": float(rec["peak"]), "threshold": float(rec["threshold"]),
               "signals": rec["signals"], "clip": clip.name if ok else None, "thumb": f"{name}.jpg"}
         self.store.add_event(ev)
+        if self.is_demo:                                      # в журнале держим не больше пяти демо-событий
+            for old in self.store.list_events(500, self.id)[DEMO_KEEP:]:
+                self.store.delete_event(old["id"])
         try:
             sent = self.telegram.send_alert(ev, clip if ok else None)
             if sent:

@@ -23,8 +23,10 @@ async function poll() {
   const badge = $("#badge");
   badge.hidden = !S.stats.unreviewed; badge.textContent = S.stats.unreviewed;
   const on = S.cameras.filter(c => c.state === "online").length;
-  $("#sysline").innerHTML = `<span>Камер в сети: <b>${on} из ${S.cameras.length}</b></span><span>Вычисления: <b>${S.device === "GPU" ? "видеокарта" : "процессор"}</b></span><span>Telegram: <b>${S.telegram.recipients.length ? "подключён" : "не подключён"}</b></span>`;
-  const key = page + "|" + S.cameras.map(c => c.id + c.name + c.enabled + c.source).join(",") + "|" + S.telegram.connected + S.telegram.recipients.length + "|" + S.settings.sensitivity;
+  $("#ver").textContent = "v" + S.version;
+  $("#sysline").innerHTML = `<div>КАМЕРЫ <b>${on} / ${S.cameras.length}</b></div><div>ВЫЧИСЛЕНИЯ <b>${S.device === "GPU" ? "видеокарта" : "процессор"}</b></div>`
+    + `<div>TELEGRAM <b class="${S.telegram.recipients.length ? "ok" : "off"}">${S.telegram.recipients.length ? "подключён" : "нет получателей"}</b></div><div>ВРЕМЯ <b>${new Date().toLocaleTimeString("ru-RU")}</b></div>`;
+  const key = page + "|" + S.cameras.map(c => c.id + c.name + c.enabled + c.source + !!c.demo).join(",") + "|" + S.telegram.connected + S.telegram.recipients.length + "|" + S.settings.sensitivity;
   if (key !== lastKey && !document.activeElement.matches("input, select")) { lastKey = key; render(); }
   else tick();
   if (bindInfo && S.telegram.last_bind) { toast(`Подключён получатель: ${S.telegram.last_bind.name}`); bindInfo = null; lastKey = ""; }
@@ -48,16 +50,21 @@ function renderLive() {
     ${S.demo_available ? `<button class="btn" onclick="addDemo()">Показать на демо-записи</button>` : ""}</div></div>`;
     return;
   }
-  main.innerHTML = `<div class="head"><div><h1>Наблюдение</h1><p>Скелеты рисуются поверх видео. Полоса показывает риск конфликта, чёрная отметка — порог тревоги.</p></div>
+  main.innerHTML = `<div class="head"><div><h1>Наблюдение</h1><p>Скелеты рисуются поверх видео. Число — риск конфликта от 0 до 1, белая отметка на шкале — порог тревоги.</p></div>
     <button class="btn" onclick="go('cameras')">Добавить камеру</button></div>
   <div class="grid ${cams.length === 1 ? "one" : ""}">${cams.map(c => `
     <div class="tile" data-cam="${c.id}">
-      <div class="view"><span data-f="msg"></span><img alt="" data-f="img"><span class="flag" data-f="flag" hidden>ПРОВЕРЬТЕ</span></div>
-      <div class="tinfo">
-        <div class="tname"><span class="no">№ ${c.no}</span><b>${esc(c.name)}</b><span class="st"><i class="dot" data-f="dot"></i><span data-f="st"></span></span></div>
-        <div class="meter"><div class="track"><u data-f="bar"></u><s data-f="thr"></s></div><span class="val" data-f="val"></span></div>
-        <div class="sigs">${Object.entries(S.signals).map(([k, v]) => `<div class="sig" data-sig="${k}"><span>${esc(v)}</span><div class="track"><u></u></div></div>`).join("")}</div>
+      <div class="thead"><span class="no">CAM ${String(c.no).padStart(2, "0")}</span><b>${esc(c.name)}</b><span class="st"><i class="dot" data-f="dot"></i><span data-f="st"></span></span></div>
+      ${c.demo ? `<div class="demobar"><span class="lbl">Демо-запись</span><span class="ttl" data-f="dttl"></span><span class="truth" data-f="dtruth"></span>
+        <span class="pos" data-f="dpos"></span><button class="btn sm" onclick="demoStep('${c.id}',-1)">‹ Предыдущая</button><button class="btn sm primary" onclick="demoStep('${c.id}',1)">Следующая ›</button></div>` : ""}
+      <div class="view"><span data-f="msg"></span><img alt="" data-f="img"><span class="flag" data-f="flag" hidden>ТРЕВОГА · ПРОВЕРЬТЕ</span></div>
+      <div class="readout">
+        <div class="num"><b data-f="val">0.00</b><span data-f="lvl">СПОКОЙНО</span></div>
+        <div class="scale"><span class="lbl">Риск конфликта · порог <span data-f="thrv"></span></span>
+          <div class="track"><u data-f="bar"></u><s data-f="thr"></s></div>
+          <div class="ticks"><span>0.0</span><span>0.25</span><span>0.5</span><span>0.75</span><span>1.0</span></div></div>
       </div>
+      <div class="sigs">${Object.entries(S.signals).map(([k, v]) => `<div class="sig" data-sig="${k}"><span>${esc(v)}</span><em>0.00</em><div class="track"><u></u></div></div>`).join("")}</div>
     </div>`).join("")}</div>`;
 }
 
@@ -71,18 +78,24 @@ function tick() {
     if (c.state === "online") { if (!img.src) img.src = `/stream/${c.id}.mjpg?${Date.now()}`; img.hidden = false; f("msg").textContent = ""; }
     else { img.hidden = true; img.removeAttribute("src"); f("msg").textContent = c.error || STATE[c.state]; }
     f("dot").className = "dot " + c.state;
-    f("st").textContent = c.state === "online" ? `${STATE.online} · людей: ${c.people} · ${c.fps.toFixed(0)} к/с` : STATE[c.state];
+    f("st").textContent = c.state === "online" ? `людей ${c.people} · ${c.fps.toFixed(0)} к/с` : STATE[c.state];
+    if (c.demo && f("dttl")) {
+      f("dttl").textContent = c.demo.title; f("dpos").textContent = `${c.demo.idx + 1} / ${c.demo.n}`;
+      f("dtruth").textContent = c.demo.fight ? "в кадре драка" : "обычная сцена"; f("dtruth").className = "truth" + (c.demo.fight ? " fight" : "");
+    }
     const lvl = c.alert ? "alert" : c.score >= 0.6 * c.threshold ? "warn" : "";
     f("bar").style.width = Math.min(c.score, 1) * 100 + "%"; f("bar").className = lvl;
     f("thr").style.left = c.threshold * 100 + "%";
-    f("val").textContent = c.score.toFixed(2);
+    f("val").textContent = c.score.toFixed(2); f("val").className = lvl;
+    f("lvl").textContent = c.alert ? "ТРЕВОГА" : lvl === "warn" ? "РИСК РАСТЁТ" : "СПОКОЙНО"; f("thrv").textContent = c.threshold.toFixed(2);
     f("flag").hidden = !c.alert; t.classList.toggle("alert", c.alert);
     t.querySelectorAll("[data-sig]").forEach(el => {
       const v = c.signals[el.dataset.sig] || 0;
-      el.querySelector("u").style.width = Math.min(v, 1) * 100 + "%"; el.classList.toggle("hot", v >= 0.4);
+      el.querySelector("u").style.width = Math.min(v, 1) * 100 + "%"; el.classList.toggle("hot", v >= 0.4); el.querySelector("em").textContent = v.toFixed(2);
     });
   }
 }
+async function demoStep(id, step) { await api(`/api/cameras/${id}/demo`, { step }); poll(); }
 async function addDemo() { await api("/api/cameras", { demo: true }); page = "live"; lastKey = ""; poll(); }
 
 // ------------------------------------------------------------------ события
@@ -210,7 +223,7 @@ function renderTelegram() {
   }
   main.innerHTML = `<div class="head"><div><h1>Telegram</h1><p>При тревоге психолог или дежурный педагог получает видеозапись момента, номер камеры, дату и время. Подключение занимает минуту.</p></div></div>
   <div class="card"><div class="steps">${step1}${step2}</div>${t.error ? `<p class="err" style="margin-top:12px">${esc(t.error)}</p>` : ""}</div>
-  <div class="card"><h2>Как выглядит уведомление</h2><pre class="mono note" style="white-space:pre-wrap">⚠️ Возможный конфликт
+  <div class="card"><h2>Как выглядит уведомление</h2><pre class="msg">⚠️ Возможный конфликт
 
 📷 Камера № 2 — Коридор, 2 этаж
 📅 Дата: ${new Date().toLocaleDateString("ru-RU")}

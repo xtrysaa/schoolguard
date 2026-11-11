@@ -91,7 +91,7 @@ class Store:
         with self.lock:
             for cam in self.cfg["cameras"]:
                 if cam["id"] == cam_id:
-                    for k in ("name", "source", "enabled", "sensitivity"):
+                    for k in ("name", "source", "enabled", "sensitivity", "demo_scene"):
                         if k in patch:
                             cam[k] = patch[k]
                     self.save()
