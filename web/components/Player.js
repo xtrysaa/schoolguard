@@ -140,7 +140,8 @@ export default function Player({ base = "/replay", cam = "CAM 01" }) {
   const seek = (t) => { const v = vref.current; if (v && data) v.currentTime = Math.max(0, Math.min(t, data.duration - 0.05)); };
   const fr = data?.frames[Math.min(now.i, (data?.frames.length || 1) - 1)];
   const level = fr ? now.level : "calm";
-  const hot = fr ? SIGNALS.filter(([k]) => (fr.c[k] || 0) >= 0.4) : [];
+  // в тексте называем не больше двух самых сильных сигналов: блок имеет постоянную высоту и не двигает страницу
+  const hot = fr ? SIGNALS.filter(([k]) => (fr.c[k] || 0) >= 0.4).sort((a, b) => fr.c[b[0]] - fr.c[a[0]]).slice(0, 2) : [];
   const status = { calm: "СПОКОЙНО", warn: "РИСК РАСТЁТ", alert: "ТРЕВОГА — ПРОВЕРЬТЕ" }[level];
   const meta = index.find((c) => c.id === sel);
   const why = !fr ? "Загрузка…"

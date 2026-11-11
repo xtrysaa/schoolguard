@@ -336,9 +336,22 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"error": str(e)}, 500)
 
 
-def serve(core: Core, port: int = 8765) -> ThreadingHTTPServer:
+class _Server(ThreadingHTTPServer):
+    allow_reuse_address = False           # на Windows иначе можно «сесть» на порт, занятый другой программой
+
+
+def serve(core: Core, ports=(8765,)) -> ThreadingHTTPServer:
+    """Запускает сервер на первом свободном порту из списка; если заняты все, порт выбирает система."""
     Handler.core = core
-    srv = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    srv = None
+    for port in (*ports, 0):
+        try:
+            srv = _Server(("127.0.0.1", port), Handler)
+            break
+        except OSError as e:
+            log.warning("порт %s недоступен: %s", port, e)
+    if srv is None:
+        raise RuntimeError("Не удалось открыть локальный порт для окна программы")
     srv.daemon_threads = True
     threading.Thread(target=srv.serve_forever, daemon=True, name="http").start()
     return srv

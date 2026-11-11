@@ -71,7 +71,7 @@ a { color: inherit; text-underline-offset: 3px; text-decoration-thickness: 1px; 
 .risk b { font: 500 52px/0.9 var(--mono); letter-spacing: -.04em; }
 .risk b.calm { color: #8FD9BC; } .risk b.warn { color: var(--warn-fill); } .risk b.alert { color: #FF7A5C; }
 .risk span { font-size: 13px; color: var(--stage-muted); padding-bottom: 4px; }
-.why { font-size: 14px; margin-top: 12px; min-height: 63px; color: #C9CED6; }
+.why { font-size: 14px; line-height: 21px; margin-top: 12px; height: 126px; overflow: hidden; color: #C9CED6; }
 .sigrow { display: grid; grid-template-columns: 1fr 34px; gap: 4px 10px; font-size: 13px; margin-bottom: 9px; color: var(--stage-muted); }
 .sigrow.hot { color: var(--stage-text); }
 .sigrow em { font: normal 12px var(--mono); text-align: right; }
