@@ -46,8 +46,9 @@ def load_real(features_dir: Path, window: int, stride: int):
         if df.empty:
             continue
         label = int(df["label"].iloc[0])
+        grp = C.canon_group(f.stem, df[FEATURE_NAMES].to_numpy(float))
         for w in windows_from_rows(df[FEATURE_NAMES].to_numpy(float), window, stride):
-            X.append(w); y.append(label); g.append(f.stem)
+            X.append(w); y.append(label); g.append(grp)
     return np.array(X), np.array(y), np.array(g)
 
 

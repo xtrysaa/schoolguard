@@ -1,98 +1,82 @@
 [
  {
   "id": "clip01",
-  "title": "Конфликт · fi001",
+  "title": "Конфликт · Surv fi005",
   "label": 1,
-  "duration": 2.12,
-  "peak": 0.609,
+  "duration": 2.9,
+  "peak": 0.927,
   "alerts": 1
  },
  {
   "id": "clip02",
-  "title": "Конфликт · fi121",
+  "title": "Конфликт · Surv fi073",
   "label": 1,
-  "duration": 2.0,
-  "peak": 0.689,
+  "duration": 2.94,
+  "peak": 0.931,
   "alerts": 1
  },
  {
   "id": "clip03",
-  "title": "Конфликт · fi106",
+  "title": "Конфликт · Surv fi063",
   "label": 1,
-  "duration": 2.0,
-  "peak": 0.644,
+  "duration": 4.74,
+  "peak": 0.752,
   "alerts": 1
  },
  {
   "id": "clip04",
-  "title": "Конфликт · fi115",
+  "title": "Конфликт · Surv fi070",
   "label": 1,
-  "duration": 2.0,
-  "peak": 0.607,
+  "duration": 2.64,
+  "peak": 0.971,
   "alerts": 1
  },
  {
   "id": "clip05",
-  "title": "Конфликт · fi117",
+  "title": "Конфликт · Surv fi061",
   "label": 1,
-  "duration": 2.2,
-  "peak": 0.784,
+  "duration": 4.37,
+  "peak": 0.912,
   "alerts": 1
  },
  {
   "id": "clip06",
-  "title": "Конфликт · fi105",
-  "label": 1,
-  "duration": 2.0,
-  "peak": 0.691,
-  "alerts": 1
+  "title": "Обычная сцена · Surv nofi001",
+  "label": 0,
+  "duration": 3.12,
+  "peak": 0.58,
+  "alerts": 0
  },
  {
   "id": "clip07",
-  "title": "Обычное поведение · nofi072",
+  "title": "Обычная сцена · Surv nofi028",
   "label": 0,
-  "duration": 2.0,
-  "peak": 0.213,
+  "duration": 2.03,
+  "peak": 0.106,
   "alerts": 0
  },
  {
   "id": "clip08",
-  "title": "Обычное поведение · nofi114",
+  "title": "Обычная сцена · Surv nofi057",
   "label": 0,
   "duration": 2.0,
-  "peak": 0.114,
+  "peak": 0.217,
   "alerts": 0
  },
  {
   "id": "clip09",
-  "title": "Обычное поведение · nofi075",
+  "title": "Обычная сцена · Surv nofi114",
   "label": 0,
   "duration": 2.0,
-  "peak": 0.211,
+  "peak": 0.001,
   "alerts": 0
  },
  {
   "id": "clip10",
-  "title": "Обычное поведение · nofi003",
-  "label": 0,
-  "duration": 2.4,
-  "peak": 0.568,
-  "alerts": 0
- },
- {
-  "id": "clip11",
-  "title": "Обычное поведение · nofi071",
+  "title": "Обычная сцена · Surv nofi138",
   "label": 0,
   "duration": 2.0,
-  "peak": 0.378,
-  "alerts": 0
- },
- {
-  "id": "clip12",
-  "title": "Обычное поведение · nofi050",
-  "label": 0,
-  "duration": 2.0,
-  "peak": 0.388,
+  "peak": 0.013,
   "alerts": 0
  }
 ]

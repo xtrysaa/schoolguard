@@ -87,8 +87,20 @@ def compute_frame_features(people: list[Person], state: FeatureState, t: float,
     for p in people:
         prev = state.people.get(p.id)
         box_h = float(max(p.box[3] - p.box[1], p.box[2] - p.box[0], 1.0))
-        h = box_h if prev is None else max(box_h, 0.97 * prev["h"])
         c = person_centroid(p)
+        if C.NORM_MODE == "torso":       # опора на длину туловища: меньше зависит от наклона камеры и позы
+            sh_, hip_ = _mid(_pt(p.kpts, L_SH), _pt(p.kpts, R_SH)), _mid(_pt(p.kpts, L_HIP), _pt(p.kpts, R_HIP))
+            if sh_ is not None and hip_ is not None:
+                tl = float(np.linalg.norm(hip_ - sh_)) * C.TORSO_TO_HEIGHT
+                if 0.4 * box_h < tl < 1.3 * box_h:       # согласуется с bbox, иначе игнорируем
+                    box_h = 0.5 * box_h + 0.5 * tl
+        # отсев ID-switch: нереальный скачок положения или размера = другой человек под тем же ID
+        if prev is not None and dt:
+            jump = np.linalg.norm(c - prev["c"]) / max(prev["h"], 1.0) / dt
+            ratio = max(box_h, prev["h"]) / max(min(box_h, prev["h"]), 1.0)
+            if jump > C.JUMP_MAX_SPEED or ratio > C.H_JUMP_RATIO:
+                prev = None
+        h = box_h if prev is None else max(box_h, 0.97 * prev["h"])
         if prev is not None and dt:
             v = 0.6 * prev["v"] + 0.4 * (c - prev["c"]) / dt
         else:
@@ -99,6 +111,8 @@ def compute_frame_features(people: list[Person], state: FeatureState, t: float,
             for i in range(2):
                 if wr[i] is not None and prev["wr"][i] is not None:
                     wv[i] = (wr[i] - prev["wr"][i]) / dt
+                    if np.linalg.norm(wv[i] - v) / h > C.WRIST_MAX_SPEED:
+                        wv[i] = None           # выброс позы
         head = _pt(p.kpts, NOSE)
         if head is None:
             head = _mid(_pt(p.kpts, L_SH), _pt(p.kpts, R_SH))
@@ -106,7 +120,7 @@ def compute_frame_features(people: list[Person], state: FeatureState, t: float,
         head_vy = 0.0
         if prev is not None and dt and head_y is not None and prev["head_y"] is not None:
             head_vy = (head_y - prev["head_y"]) / dt
-        cur[p.id] = dict(c=c, v=v, h=h, wr=wr, wv=wv, head_y=head_y, head_vy=head_vy, kpts=p.kpts)
+        cur[p.id] = dict(fresh=(prev is None and state.people.get(p.id) is not None), c=c, v=v, h=h, wr=wr, wv=wv, head_y=head_y, head_vy=head_vy, kpts=p.kpts)
 
     ids = list(cur)
     n = len(ids)
@@ -124,7 +138,7 @@ def compute_frame_features(people: list[Person], state: FeatureState, t: float,
         key = (min(a, b), max(a, b))
         new_pairs[key] = d
         min_dist = min(min_dist, d)
-        if key in state.pairs and dt:
+        if key in state.pairs and dt and a in cur and b in cur and not (cur[a].get("fresh") or cur[b].get("fresh")):
             closing = max(closing, (state.pairs[key] - d) / dt)
     feats["min_dist"] = float(min(min_dist, 5.0))
     feats["closing_speed"] = float(np.clip(closing, 0, 6))

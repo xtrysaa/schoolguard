@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SchoolGuard</title>
+<link rel="icon" href="/ui/icon.svg">
+<link rel="stylesheet" href="/ui/style.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="brand"><img src="/ui/icon.svg" alt="" width="26" height="26"><span>SchoolGuard</span></div>
+    <nav id="nav">
+      <button data-page="live">Наблюдение</button>
+      <button data-page="events">События <i id="badge" hidden></i></button>
+      <button data-page="cameras">Камеры</button>
+      <button data-page="telegram">Telegram</button>
+      <button data-page="settings">Настройки</button>
+    </nav>
+    <div class="side-foot">
+      <div id="sysline"></div>
+      <div class="muted">Система только предупреждает. Решение принимает человек.</div>
+    </div>
+  </aside>
+  <main id="main"></main>
+</div>
+<div id="modal" class="modal" hidden></div>
+<div id="toast" class="toast" hidden></div>
+<script src="/ui/qrcode.js"></script>
+<script src="/ui/app.js"></script>
+</body>
+</html>

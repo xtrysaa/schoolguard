@@ -1,15 +1,7 @@
-# PyTorch ставьте отдельно под вашу видеокарту (RTX 3050 -> CUDA 12.1):
-#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-ultralytics>=8.3.0
-opencv-python>=4.8
+# Приложение (то, что попадает в SchoolGuard.exe). PyTorch не нужен.
 numpy
-pandas
-scikit-learn
-xgboost
-matplotlib
-joblib
-streamlit>=1.37
-imageio-ffmpeg
-# Необязательно (модуль эмоций, тянет TensorFlow — тяжело):
-# deepface
-# tf-keras
+opencv-python>=4.8
+onnxruntime-directml>=1.17 ; platform_system == "Windows"
+onnxruntime>=1.17 ; platform_system != "Windows"
+requests
+lap

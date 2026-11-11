@@ -54,11 +54,14 @@ class RiskState:
 
 class RiskEngine:
     def __init__(self, eff_fps: float = 15.0, model_path: Path | str | None = C.CLASSIFIER_PATH,
-                 t_high: float = C.T_HIGH, t_low: float = C.T_LOW):
+                 t_high: float = C.T_HIGH, t_low: float = C.T_LOW, preloaded: tuple | None = None):
         self.t_high, self.t_low = t_high, t_low
         self.min_frames = max(1, int(round(C.MIN_ALERT_SECONDS * eff_fps)))
         self.model = None
         self.seq = None            # BiGRU по последовательности кадров (ансамбль с RF)
+        if preloaded is not None:  # (rf, seq_or_None, (mean, std)) — для аудита/калибровки без записи на диск
+            self.model, self.seq, self._seq_norm = preloaded
+            model_path = None
         if model_path and Path(model_path).exists():
             import joblib
             self.model = joblib.load(model_path)["model"]
@@ -81,6 +84,7 @@ class RiskEngine:
     def reset(self):
         self.rows = deque(maxlen=C.WINDOW)
         self.raw = deque(maxlen=C.WINDOW)
+        self.contact = deque(maxlen=C.WINDOW)
         self.n = 0
         self.prob = None
         self.above = self.below = 0
@@ -92,6 +96,7 @@ class RiskEngine:
         self.rows.append(feats_to_row(feats))
         self.raw.append(raw)
         self.n += 1
+        self.contact.append(max(comp["physical"], comp["distress"], comp["pursuit"]))
         # temporal smoothing: среднее по окну + среднее верхних 30% (сохраняет короткие удары,
         # но одиночный выброс в 1 кадр не вызывает тревогу)
         arr = np.sort(np.array(self.raw))
@@ -113,6 +118,9 @@ class RiskEngine:
         if self.model is not None and self.prob is not None:
             score = C.MODEL_BLEND * self.prob + (1 - C.MODEL_BLEND) * smooth
 
+        # защита от «группа друзей идёт вплотную»: окружение без контактных сигналов не должно давать тревогу
+        if C.CONTACT_GATE > 0 and max(self.contact) < C.CONTACT_GATE:
+            score = min(score, 0.9 * self.t_low)
         started = False
         if score >= self.t_high:
             self.above, self.below = self.above + 1, 0

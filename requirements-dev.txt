@@ -1,0 +1,9 @@
+# Обучение, экспорт моделей и сборка .exe (в дополнение к requirements.txt).
+# PyTorch ставьте под свою видеокарту, например: pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+ultralytics>=8.3
+onnx
+xgboost
+scikit-learn
+imageio-ffmpeg
+pillow
+pyinstaller
