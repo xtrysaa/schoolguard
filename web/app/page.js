@@ -1,5 +1,4 @@
 import Player from "../components/Player";
-import HeroLive from "../components/HeroLive";
 import m from "../public/replay/metrics.json";
 
 const DOWNLOAD = "https://github.com/xtrysaa/schoolguard/releases/latest/download/SchoolGuard.exe";
@@ -59,22 +58,20 @@ export default function Home() {
           <a className="btn sm" href={DOWNLOAD}>Скачать</a>
         </header>
       </div>
-      <div className="herobg"><div className="wrap">
-        <div className="hero">
-          <div>
-            <h1>Камера замечает драку. Психолог узнаёт <mark>через десять секунд</mark>.</h1>
-            <p className="lead">SchoolGuard подключается к школьным камерам, следит за движениями людей и присылает видеозапись
-              момента в Telegram: номер камеры, дата, время. Лица закрыты. Что делать дальше, решает человек.</p>
-            <div className="cta">
-              <a className="btn big" href={DOWNLOAD}>Скачать для Windows</a>
-              <a className="btn ghost" href="#demo">Посмотреть, как видит система</a>
-            </div>
-            <p className="under">Один файл, {SIZE}. Установка и регистрация не нужны. Внутри есть демо-записи, так что камеры для первого запуска не обязательны.</p>
+      <section className="herovid">
+        <video src="/promo.mp4" poster="/promo-poster.jpg" autoPlay muted loop playsInline aria-hidden="true" />
+        <div className="wrap herovid-in">
+          <h1>Камера замечает драку. Психолог узнаёт <mark>через десять секунд</mark>.</h1>
+          <p className="lead">SchoolGuard подключается к школьным камерам, следит за движениями людей и присылает видеозапись
+            момента в Telegram: номер камеры, дата, время. Лица закрыты. Что делать дальше, решает человек.</p>
+          <div className="cta">
+            <a className="btn big" href={DOWNLOAD}>Скачать для Windows</a>
+            <a className="btn ghost" href="#demo">Посмотреть на настоящих записях</a>
           </div>
-          <HeroLive />
+          <p className="under">Один файл, {SIZE}. Установка и регистрация не нужны. Внутри есть демо-записи, так что камеры для первого запуска не обязательны.</p>
         </div>
-
-      </div></div>
+        <p className="herovid-note">Ролик создан нейросетью как иллюстрация идеи. Как система работает на настоящих записях, показано ниже.</p>
+      </section>
 
       <div className="wrap">
         <div className="facts" aria-label="Коротко о системе">
