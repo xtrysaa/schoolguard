@@ -1,4 +1,5 @@
 import Player from "../components/Player";
+import { Accuracy, HowItWorks } from "../components/Sections";
 import m from "../public/replay/metrics.json";
 
 const DOWNLOAD = "https://github.com/xtrysaa/schoolguard/releases/latest/download/SchoolGuard.exe";
@@ -102,22 +103,10 @@ export default function Home() {
       <div className="wrap">
         <section className="sec" id="how">
           <div className="sechead">
-            <div><h2>От кадра до сообщения в Telegram — пять шагов</h2>
+            <div><h2>Что происходит между кадром и сообщением в Telegram</h2>
               <p>Картинка целиком в решении не участвует. Система переводит людей в скелеты, считает геометрию их движения и оценивает последние две секунды.</p></div>
           </div>
-          <div className="chain">
-            <div><b>1</b><h3>Камера</h3><p>IP-камера, видеорегистратор или веб-камера. Поток остаётся внутри школы.</p></div>
-            <div><b>2</b><h3>Скелеты</h3><p>Нейросеть YOLO11-Pose находит людей и 17 точек тела. Трекер ByteTrack ведёт каждого от кадра к кадру.</p></div>
-            <div><b>3</b><h3>31 признак</h3><p>Скорость рук и ног в сторону другого, захват, падение, окружение, преследование, всплеск движения.</p></div>
-            <div><b>4</b><h3>Оценка риска</h3><p>Градиентный бустинг ({m.trees} деревьев) оценивает окно в две секунды. Тревога, если риск держится выше порога.</p></div>
-            <div><b>5</b><h3>Человек</h3><p>Запись момента уходит в Telegram. Психолог смотрит и отмечает: подтверждено или ложная тревога.</p></div>
-          </div>
-          <div className="indent">
-            <div className="formula">{`признаки кадра  →  окно 2 с: среднее, максимум, разброс, минимум  →  P(конфликт)
-тревога, если  P ≥ порог  не меньше 0,8 с подряд;   снимается, когда  P < 0,6 · порог  в течение 2 с
-все расстояния — в «ростах человека», скорости — в «ростах в секунду»: не важно, далеко ли камера`}</div>
-            <p className="small">Шесть сигналов на панели справа от видео — объяснение для человека: по ним видно, что именно насторожило систему. Само решение принимает модель, обученная на {m.clips} размеченных записях.</p>
-          </div>
+          <HowItWorks m={m} />
         </section>
 
         <section className="sec" id="app">
@@ -148,36 +137,7 @@ export default function Home() {
             <div><h2>Что система умеет, а что нет — в цифрах</h2>
               <p>Проверка на {bal.n} записях, которые не участвовали в обучении. Записи одного исходного видео никогда не попадают одновременно в обучение и проверку.</p></div>
           </div>
-          <div className="cols2">
-            <div className="tablewrap">
-              <table className="data">
-                <caption>Три режима чувствительности</caption>
-                <thead><tr><th>Чувствительность</th><th>Порог</th><th>Замечено драк</th><th>Ложных тревог</th></tr></thead>
-                <tbody>
-                  {MODES.map(([k, name]) => (
-                    <tr key={k} className={k === "balanced" ? "main" : ""}>
-                      <td>{name}</td><td className="n">{m.thresholds[k].toFixed(2)}</td>
-                      <td className="n">{pct(m.clip_test[k].all.recall)} из 100</td><td className="n">{pct(m.clip_test[k].all.fpr)} из 100</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <p className="small">«Ложных тревог» — доля спокойных записей, на которых система всё же подняла тревогу. Пороги подбирались на отдельной части данных, не на проверочной.</p>
-            </div>
-            <div className="tablewrap">
-              <table className="data">
-                <caption>По типам видео, средняя чувствительность</caption>
-                <thead><tr><th>Источник</th><th>Записей</th><th>Замечено</th><th>Ложных</th><th>AUC</th></tr></thead>
-                <tbody>
-                  {Object.keys(SOURCES).filter((s) => m.clip_test.balanced[s]).map((s) => {
-                    const r = m.clip_test.balanced[s];
-                    return <tr key={s}><td>{SOURCES[s]}</td><td className="n">{r.n}</td><td className="n">{pct(r.recall)}%</td><td className="n">{pct(r.fpr)}%</td><td className="n">{r.roc_auc.toFixed(2)}</td></tr>;
-                  })}
-                  <tr className="main"><td>Все вместе</td><td className="n">{bal.n}</td><td className="n">{pct(bal.recall)}%</td><td className="n">{pct(bal.fpr)}%</td><td className="n">{m.clip_test_auc.toFixed(2)}</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <Accuracy m={m} modes={MODES} sources={SOURCES} />
           <div className="indent" style={{ marginTop: 28 }}>
             <ul className="plain">
               <li>Система видит физический конфликт: удары, захваты, падения, окружение. Словесную травлю и бойкот по видео не распознать.</li>
