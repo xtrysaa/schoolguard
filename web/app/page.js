@@ -1,5 +1,5 @@
 import Player from "../components/Player";
-import { Accuracy, HowItWorks } from "../components/Sections";
+import { Accuracy, Rows } from "../components/Sections";
 import m from "../public/replay/metrics.json";
 
 const DOWNLOAD = "https://github.com/xtrysaa/schoolguard/releases/latest/download/SchoolGuard.exe";
@@ -50,138 +50,113 @@ export default function Home() {
   const bal = m.clip_test.balanced.all;
   return (
     <>
-      <div className="topbar" id="top">
-        <header className="top wrap">
-          <Logo />
-          <nav>
-            <a href="#demo">Демо</a><a href="#how">Как работает</a><a href="#app">Приложение</a><a href="#accuracy">Точность</a><a href="#faq">Вопросы</a>
-          </nav>
-          <a className="btn sm" href={DOWNLOAD}>Скачать</a>
-        </header>
-      </div>
+      <header className="nav" id="top">
+        <Logo />
+        <nav>
+          <a href="#demo">Демо</a><a href="#how">Как работает</a><a href="#numbers">Точность</a><a href="#app">Приложение</a><a href="#faq">Вопросы</a>
+        </nav>
+        <a className="btn" href={DOWNLOAD}>Скачать</a>
+      </header>
+
       <section className="herovid">
         <video src="/promo.mp4" poster="/promo-poster.jpg" autoPlay muted loop playsInline aria-hidden="true" />
         <div className="wrap herovid-in">
-          <h1>Камера замечает драку. Психолог узнаёт <mark>через десять секунд</mark>.</h1>
-          <p className="lead">SchoolGuard подключается к школьным камерам, следит за движениями людей и присылает видеозапись
-            момента в Telegram: номер камеры, дата, время. Лица закрыты. Что делать дальше, решает человек.</p>
-          <div className="cta">
-            <a className="btn big" href={DOWNLOAD}>Скачать для Windows</a>
-            <a className="btn ghost" href="#demo">Посмотреть на настоящих записях</a>
+          <div>
+            <a className="badge" href={REPO}>Бесплатно · исходный код открыт <span aria-hidden="true">↗</span></a>
+            <h1>Камеры, которые замечают драку сами</h1>
+            <p className="lead">SchoolGuard подключается к школьным камерам, следит за движениями людей и через десять секунд
+              присылает психологу запись момента в Telegram. Лица закрыты. Что делать дальше, решает человек.</p>
+            <div className="cta">
+              <a className="btn big" href={DOWNLOAD}>Скачать для Windows</a>
+              <a className="btn ghost big" href="#demo">Смотреть демо</a>
+            </div>
           </div>
-          <p className="under">Один файл, {SIZE}. Установка и регистрация не нужны. Внутри есть демо-записи, так что камеры для первого запуска не обязательны.</p>
+          <ul className="status" aria-label="Что делает система">
+            <li className="on">Оценивает движение людей</li>
+            <li>Замечает признаки конфликта</li>
+            <li>Отправляет запись психологу</li>
+          </ul>
         </div>
-        <p className="herovid-note">Ролик создан нейросетью как иллюстрация идеи. Как система работает на настоящих записях, показано ниже.</p>
+        <p className="herovid-note">Ролик создан нейросетью как иллюстрация идеи. Настоящие записи — ниже.</p>
       </section>
 
       <div className="wrap">
-        <div className="facts" aria-label="Коротко о системе">
-          <div><b>{pct(bal.recall)} из 100</b><span>драк замечено на проверочных видео</span></div>
-          <div><b>{pct(bal.fpr)} из 100</b><span>спокойных сцен с ложной тревогой</span></div>
-          <div><b>{bal.n}</b><span>записей в проверке, при обучении их не было</span></div>
-          <div><b>0 ₸</b><span>программа бесплатная, <a href={REPO}>код открыт</a></span></div>
-        </div>
-
-      </div>
-
-      <div className="stageband" id="demo">
-        <div className="wrap">
-          <div className="stagehead">
-            <h2>Вот что видит система</h2>
-            <p>Она не узнаёт людей и не смотрит на лица. Каждый человек для неё — семнадцать точек тела, а конфликт — то, как эти точки движутся рядом друг с другом.</p>
+        <section className="panel" id="demo">
+          <div className="chead">
+            <h2>Камеры должны замечать, а не только записывать</h2>
+            <p>Вот что видит система на настоящих записях. Она не узнаёт людей и не смотрит на лица: каждый человек для неё — семнадцать точек тела, а конфликт — то, как эти точки движутся рядом друг с другом.</p>
           </div>
           <Player />
           <p className="fine">Записи из открытого набора Fight Detection Surv (лицензия MIT). Все они из проверочной части: при обучении система их не видела.
             Ролики отбирались по качеству изображения, а не по ответу системы, поэтому её ошибки здесь тоже видны и подписаны.</p>
-          <div className="stagecta">
-            <p><b>То же самое можно увидеть на своём компьютере.</b> В программе есть демо-запись: камеры для первого запуска не нужны.</p>
-            <a className="btn" href={DOWNLOAD}>Скачать SchoolGuard.exe</a>
-          </div>
-        </div>
-      </div>
-
-      <div className="wrap">
-        <section className="sec" id="how">
-          <div className="sechead">
-            <div><h2>Что происходит между кадром и сообщением в Telegram</h2>
-              <p>Картинка целиком в решении не участвует. Система переводит людей в скелеты, считает геометрию их движения и оценивает последние две секунды.</p></div>
-          </div>
-          <HowItWorks m={m} />
         </section>
 
-        <section className="sec" id="app">
-          <div className="sechead">
-            <div><h2>Одна программа для Windows. Настройка занимает несколько минут</h2>
-              <p>Никаких серверов и командной строки. Скачали файл, запустили, подключили камеру и Telegram.</p></div>
+        <section className="sec2" id="how">
+          <div className="chead"><h2>Как работает SchoolGuard</h2></div>
+          <Rows m={m} tg={<TgCard thr={m.thresholds.balanced} />} />
+        </section>
+
+        <section className="sec2" id="numbers">
+          <div className="chead">
+            <h2>Цифры без приукрашивания</h2>
+            <p>Проверка на {bal.n} записях, которые не участвовали в обучении. Записи одного исходного видео никогда не попадают одновременно в обучение и проверку.</p>
+          </div>
+          <div className="nums">
+            <div><b>{pct(bal.recall)} из 100</b><span>драк замечено</span></div>
+            <div><b>{pct(bal.fpr)} из 100</b><span>спокойных сцен с ложной тревогой</span></div>
+            <div><b>{bal.n}</b><span>записей в проверке</span></div>
+            <div><b>0 ₸</b><span>программа бесплатная</span></div>
+          </div>
+          <Accuracy m={m} modes={MODES} sources={SOURCES} />
+          <ul className="plain limits">
+            <li>Система видит физический конфликт: удары, захваты, падения, окружение. Словесную травлю и бойкот по видео не распознать.</li>
+            <li>Спорт, шумные игры и объятия иногда похожи на драку. Поэтому тревога — это просьба посмотреть запись, а не вывод.</li>
+            <li>Чем дальше и хуже камера, тем больше ошибок. Порог стоит подбирать под каждую камеру: это одна настройка в программе.</li>
+            <li>Данные для обучения — открытые наборы видео драк, не съёмка в школах. До проверки в реальной школе цифры выше — оценка, а не гарантия.</li>
+          </ul>
+        </section>
+
+        <section className="panel alt" id="app">
+          <div className="chead">
+            <h2>Одна программа для Windows</h2>
+            <p>Никаких серверов и командной строки. Скачали файл, запустили, подключили камеру и Telegram. Настройка занимает несколько минут.</p>
           </div>
           <div className="appgrid">
-            <div><figure className="shot">
+            <figure className="shot">
               <img src="/app-live.jpg" alt="Окно программы SchoolGuard: трансляция камеры со скелетами людей, шкала риска и сигналы" width="800" height="518" />
               <figcaption>Экран «Наблюдение»: скелеты поверх видео, показатели сверху, риск числом и на шкале, справа очередь последних тревог.</figcaption>
             </figure>
-              <div className="tgwrap"><div className="herocard-cap">Так выглядит сообщение психологу</div><TgCard thr={m.thresholds.balanced} /></div>
-            </div>
-            <div>
-              <ol className="setup">
-                <li><div><h3>Скачайте и запустите</h3><p>Один файл SchoolGuard.exe. Установка не нужна, нейросеть уже внутри. Работает на процессоре, с видеокартой — быстрее.</p></div></li>
-                <li><div><h3>Подключите камеры</h3><p>Выберите производителя, введите IP-адрес, логин и пароль — ссылку на поток программа составит сама. Каждая камера получает номер.</p></div></li>
-                <li><div><h3>Привяжите Telegram</h3><p>Наведите телефон на QR-код и нажмите «Старт» в боте. Или отправьте боту шесть цифр. Вводить идентификаторы чата не нужно.</p></div></li>
-                <li><div><h3>Получайте записи</h3><p>При тревоге приходит видео: пять секунд до события и пять после. В подписи — номер камеры, дата и время.</p></div></li>
-              </ol>
-            </div>
+            <ol className="setup">
+              <li><div><h3>Скачайте и запустите</h3><p>Один файл SchoolGuard.exe, {SIZE}. Установка не нужна, нейросеть уже внутри.</p></div></li>
+              <li><div><h3>Подключите камеры</h3><p>Выберите производителя, введите IP-адрес, логин и пароль. Ссылку на поток программа составит сама.</p></div></li>
+              <li><div><h3>Привяжите Telegram</h3><p>Наведите телефон на QR-код и нажмите «Старт» в боте или отправьте боту шесть цифр.</p></div></li>
+              <li><div><h3>Получайте записи</h3><p>При тревоге приходит видео с номером камеры, датой и временем.</p></div></li>
+            </ol>
           </div>
         </section>
 
-        <section className="sec" id="accuracy">
-          <div className="sechead">
-            <div><h2>Что система умеет, а что нет — в цифрах</h2>
-              <p>Проверка на {bal.n} записях, которые не участвовали в обучении. Записи одного исходного видео никогда не попадают одновременно в обучение и проверку.</p></div>
+        <section className="sec2" id="privacy">
+          <div className="chead"><h2>Следит за движениями, а не за людьми</h2></div>
+          <div className="priv">
+            <div><h3>Без лиц и имён</h3><p>Нет распознавания лиц и личностей: у людей в кадре только временные номера. Головы закрываются пикселями в трансляции, в записях и в Telegram.</p></div>
+            <div><h3>Видео остаётся в школе</h3><p>Обработка идёт на компьютере школы. Наружу уходят только короткие записи тревог в Telegram. Записи хранятся 30 дней и удаляются сами.</p></div>
+            <div><h3>Решает человек</h3><p>Система никого не наказывает и не выносит решений: она предупреждает взрослого. Обмен ответами для дообучения выключен, пока школа сама его не включит.</p></div>
           </div>
-          <Accuracy m={m} modes={MODES} sources={SOURCES} />
-          <div className="indent" style={{ marginTop: 28 }}>
-            <ul className="plain">
-              <li>Система видит физический конфликт: удары, захваты, падения, окружение. Словесную травлю и бойкот по видео не распознать.</li>
-              <li>Спорт, шумные игры и объятия иногда похожи на драку. Поэтому тревога — это просьба посмотреть запись, а не вывод.</li>
-              <li>Чем дальше и хуже камера, тем больше ошибок. Порог стоит подбирать под каждую камеру: это одна настройка в программе.</li>
-              <li>Данные для обучения — открытые наборы видео драк, не съёмка в школах. До проверки в реальной школе цифры выше — оценка, а не гарантия.</li>
-            </ul>
-          </div>
+          <p className="fine center">Внедрение в школе требует информирования родителей и соблюдения Закона РК «О персональных данных и их защите».</p>
         </section>
 
-        <section className="sec" id="privacy">
-          <div className="sechead">
-            <div><h2>Система следит за движениями, а не за людьми</h2></div>
-          </div>
-          <div className="cols2 indent">
-            <ul className="plain">
-              <li>Нет распознавания лиц и личностей: у людей в кадре только временные номера.</li>
-              <li>Головы закрываются пикселями в трансляции, в записях и в Telegram.</li>
-              <li>Видео обрабатывается на компьютере школы и никуда не отправляется, кроме коротких записей тревог в Telegram.</li>
-              <li>Обмен ответами для дообучения выключен, пока школа сама его не включит. В нём только числа, без видео.</li>
-            </ul>
-            <ul className="plain">
-              <li>Записи хранятся ограниченный срок (по умолчанию 30 дней) и удаляются сами.</li>
-              <li>Система никого не наказывает и не выносит решений: она предупреждает взрослого.</li>
-              <li>Внедрение в школе требует информирования родителей и соблюдения Закона РК «О персональных данных и их защите».</li>
-            </ul>
-          </div>
-        </section>
-
-        <section className="sec" id="faq">
-          <div className="sechead">
-            <div><h2>Что обычно спрашивают перед тем, как скачать</h2></div>
-          </div>
-          <div className="faq indent">
+        <section className="sec2 faqsec" id="faq">
+          <h2>Частые вопросы</h2>
+          <div className="faq">
             {FAQ.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}
           </div>
         </section>
 
-        <div className="dl">
-          <div><h2>Посмотрите, как это работает, за одну минуту</h2>
-            <p>Скачайте файл, запустите и нажмите «Показать на демо-записи». Камеры и Telegram можно подключить потом. Бесплатно, {SIZE}, Windows 10 и 11.</p>
-          </div>
+        <section className="panel final">
+          <h2>Посмотрите, как это работает, за одну минуту</h2>
+          <p>Скачайте файл, запустите и нажмите «Показать на демо-записи». Камеры и Telegram можно подключить потом. Бесплатно, {SIZE}, Windows 10 и 11.</p>
           <a className="btn big" href={DOWNLOAD}>Скачать SchoolGuard.exe</a>
-        </div>
+        </section>
 
         <footer>
           <span>SchoolGuard · научный проект школьника, конкурс «Дарын»</span>

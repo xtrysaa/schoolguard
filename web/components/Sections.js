@@ -1,4 +1,4 @@
-// Секции «Как работает» и «Точность»: схемы и диаграммы вместо карточек и таблиц.
+// Секции главной страницы: ряды «Видит / Понимает / Сообщает» и точность в диаграммах.
 const pct = (v) => Math.round(v * 100);
 
 // два условных скелета: 17 точек тела, как их видит система
@@ -18,52 +18,70 @@ function Figure({ p, color }) {
   );
 }
 
-export function HowItWorks({ m }) {
-  const steps = [
-    ["Камера", "IP-камера, видеорегистратор или веб-камера. Поток остаётся внутри школы.", "12 кадров в секунду"],
-    ["Скелеты", "Нейросеть YOLO11-Pose находит людей и 17 точек тела. Трекер ведёт каждого человека от кадра к кадру.", "каждый кадр"],
-    ["Признаки движения", "31 число на кадр: скорость руки или ноги в сторону другого, захват, падение, окружение, преследование. Расстояния считаются в «ростах человека», поэтому не важно, далеко ли камера.", "каждый кадр"],
-    ["Оценка риска", `Градиентный бустинг из ${m.trees} деревьев смотрит на последние две секунды и выдаёт риск от 0 до 1.`, "окно 2 секунды"],
-    ["Тревога и человек", "Если риск держится выше порога 0,8 секунды, запись момента уходит психологу в Telegram. Он смотрит и отмечает: подтверждено или ложная тревога.", "около 10 секунд"],
-  ];
+function SkeletonFig() {
   return (
-    <div className="how">
-      <div className="how-figs">
-        <figure>
-          <svg viewBox="0 0 440 310" role="img" aria-label="Два условных скелета: система измеряет скорость руки в сторону другого человека и дистанцию между людьми">
-            <Figure p={A} color="var(--alert)" />
-            <Figure p={B} color="var(--accent)" />
-            <line x1="196" y1="91" x2="232" y2="88" stroke="var(--alert)" strokeWidth="2" markerEnd="url(#arr)" />
-            <defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--alert)" /></marker></defs>
-            <text x="118" y="24" className="svg-t">скорость руки в сторону другого</text>
-            <line x1="212" y1="30" x2="212" y2="80" stroke="var(--ink3)" strokeWidth="1" />
-            <line x1="112" y1="288" x2="283" y2="288" stroke="var(--ink3)" strokeWidth="1.5" strokeDasharray="5 5" />
-            <line x1="112" y1="282" x2="112" y2="294" stroke="var(--ink3)" strokeWidth="1.5" /><line x1="283" y1="282" x2="283" y2="294" stroke="var(--ink3)" strokeWidth="1.5" />
-            <text x="197" y="306" textAnchor="middle" className="svg-t">дистанция: 0,8 роста</text>
-            <text x="344" y="118" className="svg-t">17 точек тела</text>
-            <line x1="340" y1="116" x2="322" y2="124" stroke="var(--ink3)" strokeWidth="1" />
-          </svg>
-          <figcaption>Лиц и одежды система не видит. Для неё человек — это 17 точек и то, как они движутся.</figcaption>
-        </figure>
-        <figure>
-          <svg viewBox="0 0 400 150" role="img" aria-label="График риска: тревога включается, когда риск держится выше порога 0,8 секунды">
-            <line x1="20" y1="58" x2="380" y2="58" stroke="var(--ink3)" strokeWidth="1.5" strokeDasharray="6 6" />
-            <text x="24" y="50" className="svg-t">порог {m.thresholds.balanced.toFixed(2)}</text>
-            <rect x="188" y="14" width="62" height="112" fill="var(--alert)" opacity=".14" />
-            <path d="M20 118 C70 116 110 112 140 104 C165 96 172 70 188 52 C205 34 230 30 250 28 C300 24 340 30 380 26" fill="none" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" />
-            <path d="M250 28 C300 24 340 30 380 26" fill="none" stroke="var(--alert)" strokeWidth="3" strokeLinecap="round" />
-            <line x1="250" y1="14" x2="250" y2="126" stroke="var(--alert)" strokeWidth="1.5" />
-            <text x="219" y="142" textAnchor="middle" className="svg-t">0,8 с</text>
-            <text x="258" y="142" className="svg-t svg-alert">тревога</text>
-          </svg>
-          <figcaption>Одного резкого кадра мало: риск должен продержаться выше порога. Так отсекаются случайные взмахи.</figcaption>
-        </figure>
+    <svg viewBox="0 0 440 310" role="img" aria-label="Два условных скелета: система измеряет скорость руки в сторону другого человека и дистанцию между людьми">
+      <Figure p={A} color="var(--alert)" />
+      <Figure p={B} color="var(--accent)" />
+      <defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--alert)" /></marker></defs>
+      <line x1="196" y1="91" x2="232" y2="88" stroke="var(--alert)" strokeWidth="2" markerEnd="url(#arr)" />
+      <text x="118" y="24" className="svg-t">скорость руки в сторону другого</text>
+      <line x1="212" y1="30" x2="212" y2="80" stroke="var(--ink3)" strokeWidth="1" />
+      <line x1="112" y1="288" x2="283" y2="288" stroke="var(--ink3)" strokeWidth="1.5" strokeDasharray="5 5" />
+      <line x1="112" y1="282" x2="112" y2="294" stroke="var(--ink3)" strokeWidth="1.5" /><line x1="283" y1="282" x2="283" y2="294" stroke="var(--ink3)" strokeWidth="1.5" />
+      <text x="197" y="306" textAnchor="middle" className="svg-t">дистанция: 0,8 роста</text>
+    </svg>
+  );
+}
+
+function RiskFig({ thr }) {
+  return (
+    <svg viewBox="0 0 400 170" role="img" aria-label="График риска: тревога включается, когда риск держится выше порога 0,8 секунды">
+      <line x1="20" y1="68" x2="380" y2="68" stroke="var(--ink3)" strokeWidth="1.5" strokeDasharray="6 6" />
+      <text x="24" y="60" className="svg-t">порог {thr.toFixed(2)}</text>
+      <rect x="188" y="20" width="62" height="118" fill="var(--alert)" opacity=".14" />
+      <path d="M20 128 C70 126 110 122 140 114 C165 106 172 80 188 62 C205 44 230 40 250 38" fill="none" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" />
+      <path d="M250 38 C300 34 340 40 380 36" fill="none" stroke="var(--alert)" strokeWidth="3" strokeLinecap="round" />
+      <line x1="250" y1="20" x2="250" y2="138" stroke="var(--alert)" strokeWidth="1.5" />
+      <text x="219" y="158" textAnchor="middle" className="svg-t">0,8 с</text>
+      <text x="258" y="158" className="svg-t svg-alert">тревога</text>
+    </svg>
+  );
+}
+
+export function Rows({ m, tg }) {
+  return (
+    <div className="rows">
+      <div className="row">
+        <div className="row-txt">
+          <span className="row-lbl">Видит</span>
+          <h3>Люди превращаются в семнадцать точек</h3>
+          <p>Нейросеть YOLO11-Pose находит в кадре людей и точки тела: плечи, локти, запястья, бёдра, колени. Лиц и одежды система не видит и никого не узнаёт. Трекер ведёт каждого человека от кадра к кадру под временным номером.</p>
+        </div>
+        <div className="media">
+          <SkeletonFig />
+          <div className="chips tr"><span>17 точек тела</span><span>людей в кадре: 2</span></div>
+        </div>
       </div>
-      <ol className="steps">
-        {steps.map(([title, text, when]) => (
-          <li key={title}><div><h3>{title}</h3><p>{text}</p></div><span>{when}</span></li>
-        ))}
-      </ol>
+      <div className="row rev">
+        <div className="row-txt">
+          <span className="row-lbl">Понимает</span>
+          <h3>Риск считается по двум секундам движения</h3>
+          <p>На каждом кадре считается 31 признак: скорость руки или ноги в сторону другого, захват, падение, окружение, преследование. Модель из {m.trees} деревьев оценивает последние две секунды и выдаёт риск от 0 до 1. Одного резкого кадра мало: риск должен продержаться выше порога 0,8 секунды.</p>
+        </div>
+        <div className="media">
+          <RiskFig thr={m.thresholds.balanced} />
+          <div className="chips bl"><span>удары и резкие движения</span><span>плотный контакт</span></div>
+        </div>
+      </div>
+      <div className="row">
+        <div className="row-txt">
+          <span className="row-lbl">Сообщает</span>
+          <h3>Запись момента приходит психологу</h3>
+          <p>В Telegram уходит видео: пять секунд до события и пять после, с номером камеры, датой и временем. Лица закрыты. Психолог смотрит и отмечает «подтверждено» или «ложная тревога». Решение всегда за человеком.</p>
+        </div>
+        <div className="media plain">{tg}</div>
+      </div>
     </div>
   );
 }
