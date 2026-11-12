@@ -1,4 +1,5 @@
 import Player from "../components/Player";
+import HeroStatus from "../components/HeroStatus";
 import { Accuracy, Rows } from "../components/Sections";
 import m from "../public/replay/metrics.json";
 
@@ -71,11 +72,7 @@ export default function Home() {
               <a className="btn ghost big" href="#demo">Смотреть демо</a>
             </div>
           </div>
-          <ul className="status" aria-label="Что делает система">
-            <li className="on">Оценивает движение людей</li>
-            <li>Замечает признаки конфликта</li>
-            <li>Отправляет запись психологу</li>
-          </ul>
+          <HeroStatus />
         </div>
         <p className="herovid-note">Ролик создан нейросетью как иллюстрация идеи. Настоящие записи — ниже.</p>
       </section>

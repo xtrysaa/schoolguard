@@ -322,3 +322,5 @@ footer { margin-top: 56px; }
 @media (max-width: 720px) { .panel#demo { padding-left: 14px; padding-right: 14px; } .chead p { font-size: 17px; } .row p { font-size: 17px; } .nums div { padding: 26px 12px; } .nums span { font-size: 15px; } }
 @media (max-width: 900px) { .chips, .chips.tr, .chips.bl { position: static; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; } .media { padding: 24px 18px; } }
 .phone { display: block; width: 100%; max-width: 330px; height: auto; }
+.status li { transition: color .35s ease; } .status li::after { transition: background-color .35s ease; }
+@media (prefers-reduced-motion: reduce) { .status li, .status li::after { transition: none; } }
