@@ -12,15 +12,15 @@
   <aside class="side">
     <div class="brand"><img src="/ui/icon.svg" alt="" width="26" height="26"><span>SchoolGuard</span><small id="ver"></small></div>
     <nav id="nav">
-      <button data-page="live">Наблюдение</button>
-      <button data-page="events">События <i id="badge" hidden></i></button>
-      <button data-page="cameras">Камеры</button>
+      <button data-page="live"><span data-i18n="nav_live">Наблюдение</span></button>
+      <button data-page="events"><span data-i18n="nav_events">События</span> <i id="badge" hidden></i></button>
+      <button data-page="cameras"><span data-i18n="nav_cameras">Камеры</span></button>
       <button data-page="telegram">Telegram</button>
-      <button data-page="settings">Настройки</button>
+      <button data-page="settings"><span data-i18n="nav_settings">Настройки</span></button>
     </nav>
     <div class="side-foot">
       <div id="sysline"></div>
-      <div class="muted">Система только предупреждает. Решение принимает человек.</div>
+      <div class="muted" data-i18n="foot_note">Система только предупреждает. Решение принимает человек.</div>
     </div>
   </aside>
   <main id="main"></main>
@@ -28,6 +28,7 @@
 <div id="modal" class="modal" hidden></div>
 <div id="toast" class="toast" hidden></div>
 <script src="/ui/qrcode.js"></script>
+<script src="/ui/i18n.js"></script>
 <script src="/ui/app.js"></script>
 </body>
 </html>

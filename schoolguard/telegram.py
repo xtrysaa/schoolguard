@@ -15,7 +15,7 @@ from pathlib import Path
 
 import requests
 
-from .features import SIGNALS
+from .i18n import sig, tr
 
 log = logging.getLogger("schoolguard.telegram")
 CODE_TTL = 600
@@ -117,16 +117,18 @@ class Telegram:
         if not self.cfg["token"] or not self.cfg["recipients"]:
             return 0
         lt = time.localtime(ev["ts"])
-        top = [SIGNALS[k].lower() for k, v in sorted(ev["signals"].items(), key=lambda kv: -kv[1]) if v >= 0.15][:3]
-        caption = (f"⚠️ Возможный конфликт\n\n"
-                   f"📷 Камера № {ev['camera_no']} — {ev['camera_name']}\n"
-                   f"📅 Дата: {time.strftime('%d.%m.%Y', lt)}\n"
-                   f"🕒 Время: {time.strftime('%H:%M:%S', lt)}\n"
-                   f"📈 Риск: {ev['peak']:.2f} (порог {ev['threshold']:.2f})\n"
-                   + (f"Признаки: {', '.join(top)}\n" if top else "")
-                   + "\nСистема только предупреждает. Посмотрите запись и отметьте результат.")
-        kb = json.dumps({"inline_keyboard": [[{"text": "✅ Подтвердить", "callback_data": f"ok:{ev['id']}"},
-                                              {"text": "❌ Ложная тревога", "callback_data": f"fp:{ev['id']}"}]]})
+        S = self.store
+        top = [sig(S, k) for k, v in sorted(ev["signals"].items(), key=lambda kv: -kv[1]) if v >= 0.15][:3]
+        caption = (tr(S, "alert_title") + "\n\n"
+                   + tr(S, "camera", no=ev["camera_no"], name=ev["camera_name"]) + "\n"
+                   + tr(S, "date", v=time.strftime("%d.%m.%Y", lt)) + "\n"
+                   + tr(S, "time", v=time.strftime("%H:%M:%S", lt)) + "\n"
+                   + tr(S, "risk", p=f"{ev['peak']:.2f}", t=f"{ev['threshold']:.2f}") + "\n"
+                   + (tr(S, "signs", v=", ".join(top)) + "\n" if top else "")
+                   + ("" if S.cfg["settings"].get("privacy_blur", True) else "\n" + tr(S, "faces_open") + "\n")
+                   + "\n" + tr(S, "alert_foot"))
+        kb = json.dumps({"inline_keyboard": [[{"text": tr(S, "btn_ok"), "callback_data": f"ok:{ev['id']}"},
+                                              {"text": tr(S, "btn_fp"), "callback_data": f"fp:{ev['id']}"}]]})
         sent = 0
         for r in list(self.cfg["recipients"]):
             try:
@@ -139,7 +141,7 @@ class Telegram:
                 sent += 1
                 self.error = ""
             except Exception as e:
-                self.error = f"Не удалось отправить: {e}"
+                self.error = f"tg_send_fail: {e}"
                 log.warning("send_alert: %s", e)
         return sent
 
@@ -154,17 +156,14 @@ class Telegram:
             log.info("сообщение боту: команда=%s, цифр=%d", text.split()[0][:12] if text.startswith("/") else "-", len(code))
             if text.startswith("/stop"):
                 self.remove_recipient(chat["id"])
-                self.send_text("Вы отключены от уведомлений SchoolGuard.", chat["id"])
+                self.send_text(tr(self.store, "stopped"), chat["id"])
             elif len(code) == 6:
                 if self._bind(chat, code):
-                    self.send_text("✅ Готово. Сюда будут приходить видеозаписи возможных конфликтов: номер камеры, дата и время.\n\n"
-                                   "Система только предупреждает — решение принимаете вы. Отключиться: /stop", chat["id"])
+                    self.send_text(tr(self.store, "bound"), chat["id"])
                 else:
-                    self.send_text("Код не подошёл или устарел. Откройте SchoolGuard → Telegram → «Подключить получателя» "
-                                   "и получите новый код.", chat["id"])
+                    self.send_text(tr(self.store, "bad_code"), chat["id"])
             else:
-                self.send_text("Это бот уведомлений SchoolGuard. Чтобы подключиться, откройте приложение SchoolGuard → "
-                               "Telegram → «Подключить получателя» и отправьте сюда шесть цифр кода.", chat["id"])
+                self.send_text(tr(self.store, "intro"), chat["id"])
         elif "callback_query" in u:
             q = u["callback_query"]
             verdict, _, ev_id = q["data"].partition(":")
@@ -173,9 +172,9 @@ class Telegram:
                 self.store.update_event(ev_id, verdict="confirmed" if verdict == "ok" else "false_alarm", shared=0)
                 if self.on_verdict:
                     self.on_verdict(ev_id)
-                res = "✅ Подтверждено" if verdict == "ok" else "❌ Отмечено как ложная тревога"
+                res = tr(self.store, "cb_ok" if verdict == "ok" else "cb_fp")
             else:
-                res = "Уже отмечено"
+                res = tr(self.store, "cb_done")
             self._call("answerCallbackQuery", data={"callback_query_id": q["id"], "text": res})
             try:
                 self._call("editMessageReplyMarkup", data={"chat_id": q["message"]["chat"]["id"],
@@ -200,12 +199,11 @@ class Telegram:
                     except Exception as e:
                         log.warning("handle: %s", e)
             except requests.exceptions.RequestException:
-                self.error = "Нет связи с Telegram (проверьте интернет)"
+                self.error = "tg_nonet"
                 time.sleep(5)
             except Exception as e:
                 msg = str(e)
-                self.error = ("Этот бот уже используется другой программой" if "Conflict" in msg
-                              else "Токен бота не принят Telegram" if "Unauthorized" in msg else msg)
+                self.error = "tg_conflict" if "Conflict" in msg else "tg_unauth" if "Unauthorized" in msg else msg
                 time.sleep(5)
 
     def stop(self):

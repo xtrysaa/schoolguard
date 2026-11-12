@@ -5,6 +5,9 @@
 from __future__ import annotations
 
 import base64
+import hashlib
+import hmac
+import os
 import json
 import logging
 import mimetypes
@@ -19,6 +22,7 @@ from . import __version__
 from .camera import CameraWorker, demo_scenes, list_webcams, probe
 from .features import SIGNALS
 from .gbm import GBM
+from .i18n import LANGS, tr
 from .pose import PoseDetector
 from .store import Store, resource_dir
 from .telegram import Telegram
@@ -133,12 +137,13 @@ class Core:
             st = w.status() if w else {"id": c["id"], "state": "disabled", "error": "", "score": 0, "threshold": 0,
                                         "alert": False, "people": 0, "fps": 0, "signals": {}, "last_alert": 0}
             src = c["source"]
-            c["source_masked"] = ("демонстрационная запись" if src == "demo" else f"веб-камера {int(src) + 1}" if src.isdigit()
-                                  else re.sub(r"//([^:@/]+):([^@/]+)@", r"//\1:•••@", src))
+            c["source_kind"] = "demo" if src == "demo" else "webcam" if src.isdigit() else "other"
+            c["source_masked"] = (str(int(src) + 1) if src.isdigit() else re.sub(r"//([^:@/]+):([^@/]+)@", r"//\1:•••@", src))
             c["source"] = c["source_masked"]            # пароль камеры в интерфейс не отдаём
             cams.append({**c, **st})
         th = (self.model.meta.get("thresholds") if self.model else None) or {}
-        return {"version": __version__, "cameras": cams, "settings": cfg["settings"], "telegram": self.telegram.status(),
+        pin_set = bool(cfg["settings"].pop("admin_pin", ""))                # сам хеш в окно не отдаём
+        return {"version": __version__, "cameras": cams, "settings": cfg["settings"], "pin_set": pin_set, "telegram": self.telegram.status(),
                 "stats": self.store.stats(), "device": self.detector.device, "model": bool(self.model),
                 "thresholds": th, "signals": SIGNALS, "demo_available": self.demo_ok,
                 "home": str(self.store.home)}
@@ -148,8 +153,8 @@ class Core:
         if body.get("demo"):
             source = "demo"
         if not source:
-            raise ValueError("Укажите адрес камеры")
-        cam = self.store.add_camera(body.get("name") or ("Демонстрация" if body.get("demo") else ""), source,
+            raise ValueError("need_addr")
+        cam = self.store.add_camera(body.get("name") or (body.get("demo_name") or "Demo" if body.get("demo") else ""), source,
                                     body.get("sensitivity") or None)
         self._start(cam)
         return cam
@@ -183,9 +188,48 @@ class Core:
         self._stop(cam_id)
         self.store.remove_camera(cam_id)
 
+    # ------------------------------------------------------------ пароль администратора
+    @staticmethod
+    def _pin_hash(pin: str, salt: bytes | None = None) -> str:
+        salt = salt or os.urandom(16)
+        return salt.hex() + "$" + hashlib.pbkdf2_hmac("sha256", pin.encode("utf-8"), salt, 120_000).hex()
+
+    def pin_ok(self, pin) -> bool:
+        """True, если пароль не задан или введён верно."""
+        saved = self.store.cfg["settings"].get("admin_pin") or ""
+        if not saved:
+            return True
+        try:
+            salt = bytes.fromhex(saved.split("$")[0])
+        except ValueError:
+            return False
+        return hmac.compare_digest(self._pin_hash(str(pin or ""), salt), saved)
+
+    def set_pin(self, body: dict):
+        if not self.pin_ok(body.get("pin")):
+            raise PermissionError("pin_required")
+        new = str(body.get("new") or "")
+        if new and len(new) < 4:
+            raise ValueError("pin_short")
+        with self.store.lock:
+            had = bool(self.store.cfg["settings"].get("admin_pin"))
+            self.store.cfg["settings"]["admin_pin"] = self._pin_hash(new) if new else ""
+            self.store.save()
+        self.store.add_audit("admin_pin", "set" if had else "none", "set" if new else "none")
+
+    PROTECTED = ("privacy_blur", "share_feedback", "retention_days")     # меняются только с паролем, если он задан
+
     def set_settings(self, body: dict):
         allowed = {"sensitivity": str, "privacy_blur": bool, "clip_pre_s": float, "clip_post_s": float, "cooldown_s": float,
-                   "retention_days": int, "device": str, "autostart": bool, "share_feedback": bool}
+                   "retention_days": int, "device": str, "autostart": bool, "share_feedback": bool, "lang": str}
+        cur = self.store.cfg["settings"]
+        changed = [k for k in self.PROTECTED if k in body and allowed[k](body[k]) != cur.get(k)]
+        if changed and not self.pin_ok(body.get("pin")):
+            raise PermissionError("pin_required")
+        if "lang" in body and body["lang"] not in LANGS:
+            body = {k: v for k, v in body.items() if k != "lang"}
+        for k in changed:                                                   # каждое изменение приватности остаётся в журнале
+            self.store.add_audit(k, cur.get(k), allowed[k](body[k]))
         with self.store.lock:
             s = self.store.cfg["settings"]
             for k, typ in allowed.items():
@@ -306,6 +350,8 @@ class Handler(BaseHTTPRequestHandler):
             if p == "/api/events":
                 q = parse_qs(u.query)
                 return self._json(core.store.list_events(int(q.get("limit", ["200"])[0]), q.get("camera", [None])[0]))
+            if p == "/api/audit":
+                return self._json(core.store.list_audit())
             if p == "/api/webcams":
                 busy = {c["source"] for c in core.store.cfg["cameras"]}
                 return self._json([i for i in list_webcams() if str(i) not in busy])
@@ -315,7 +361,7 @@ class Handler(BaseHTTPRequestHandler):
                 w = core.workers.get(m.group(1))
                 if w and w.jpeg:
                     return self._send(200, w.jpeg, "image/jpeg")
-                return self._json({"error": "нет кадра"}, 404)
+                return self._json({"error": "no frame"}, 404)
             if p.startswith("/clips/"):
                 return self._file(core.store.home / "clips" / p[7:], core.store.home / "clips")
             self._json({"error": "not found"}, 404)
@@ -347,13 +393,15 @@ class Handler(BaseHTTPRequestHandler):
             if p == "/api/settings":
                 core.set_settings(b)
                 return self._json({"ok": True})
+            if p == "/api/pin":
+                core.set_pin(b)
+                return self._json({"ok": True})
             if p == "/api/telegram/token":
                 try:
                     me = core.telegram.set_token(b.get("token", ""))
                     return self._json({"ok": True, "username": me.get("username")})
                 except Exception as e:
-                    msg = "Telegram не принял токен. Скопируйте его из @BotFather целиком." if "Unauthorized" in str(e) or "Not Found" in str(e) \
-                        else f"Не удалось проверить токен: {e}"
+                    msg = "tg_token_bad" if "Unauthorized" in str(e) or "Not Found" in str(e) else f"tg_token_check: {e}"
                     return self._json({"ok": False, "error": msg})
             if p == "/api/telegram/disconnect":
                 core.telegram.clear_token()
@@ -365,7 +413,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"ok": True})
             if p == "/api/telegram/test":
                 try:
-                    core.telegram.send_text("✅ Проверка связи: SchoolGuard подключён. Тревоги будут приходить в этот чат.")
+                    core.telegram.send_text(tr(core.store, "test"))
                     return self._json({"ok": True})
                 except Exception as e:
                     return self._json({"ok": False, "error": str(e)})
@@ -382,6 +430,8 @@ class Handler(BaseHTTPRequestHandler):
                 threading.Thread(target=core.quit.set, daemon=True).start()
                 return
             self._json({"error": "not found"}, 404)
+        except PermissionError as e:
+            self._json({"error": str(e)}, 403)
         except (ValueError, KeyError) as e:
             self._json({"error": str(e)}, 400)
         except Exception as e:

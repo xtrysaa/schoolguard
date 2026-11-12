@@ -39,6 +39,8 @@ DEFAULTS = {
         "retention_days": 30,
         "device": "auto",              # auto | cpu
         "autostart": False,
+        "lang": None,                  # ru | kk | en; None — ещё не выбран (окно покажет экран выбора языка)
+        "admin_pin": "",               # соль$хеш пароля администратора; пусто — пароль не задан
         "share_feedback": False,       # отправлять отметки «подтверждено / ложная» и признаки движения (без видео) для дообучения
     },
 }
@@ -65,6 +67,7 @@ class Store:
         self.db.execute("""CREATE TABLE IF NOT EXISTS events(
             id TEXT PRIMARY KEY, ts REAL, camera_id TEXT, camera_no INTEGER, camera_name TEXT, peak REAL, threshold REAL,
             signals TEXT, clip TEXT, thumb TEXT, verdict TEXT, sent INTEGER DEFAULT 0, note TEXT)""")
+        self.db.execute("CREATE TABLE IF NOT EXISTS audit(ts REAL, key TEXT, old TEXT, new TEXT)")
         have = {r["name"] for r in self.db.execute("PRAGMA table_info(events)")}
         for col, typ in (("features", "TEXT"), ("shared", "INTEGER DEFAULT 0")):
             if col not in have:
@@ -175,6 +178,17 @@ class Store:
         d["signals"] = json.loads(d["signals"] or "{}")
         d["has_features"] = bool(d.pop("features", None))      # сами числа в интерфейс не отдаём
         return d
+
+    # ------------------------------------------------------------ журнал изменений настроек (только добавление)
+    def add_audit(self, key: str, old, new):
+        with self.lock:
+            self.db.execute("INSERT INTO audit(ts, key, old, new) VALUES(?,?,?,?)", (time.time(), key, str(old), str(new)))
+            self.db.commit()
+
+    def list_audit(self, limit: int = 50) -> list[dict]:
+        with self.lock:
+            rows = self.db.execute("SELECT ts, key, old, new FROM audit ORDER BY ts DESC LIMIT ?", (int(limit),)).fetchall()
+        return [dict(r) for r in rows]
 
     def event_features(self, ev_id: str) -> list | None:
         with self.lock:

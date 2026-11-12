@@ -1,16 +1,10 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { T } from "../lib/i18n";
 
 const BONES = [[5,7],[7,9],[6,8],[8,10],[5,6],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16]];
 const KP = 0.3;
-const SIGNALS = [
-  ["strikes", "Удары и резкие движения", "резкие движения рук или ног в сторону другого человека"],
-  ["contact", "Захват, плотный контакт", "люди сцепились: руки одного внутри силуэта другого"],
-  ["fall", "Падение, защитная поза", "человек падает, лежит или закрывает голову руками"],
-  ["encirclement", "Окружение", "одного человека окружили с нескольких сторон"],
-  ["pursuit", "Преследование", "один убегает, другие движутся следом"],
-  ["motion", "Всплеск движения", "в зоне контакта движения гораздо больше, чем в остальном кадре"],
-];
+const SIGNAL_KEYS = ["strikes", "contact", "fall", "encirclement", "pursuit", "motion"];
 const COLORS = { calm: "#35D6E8", warn: "#E8A21C", alert: "#FF4D4D" };
 
 // кадр анализа для момента времени t + доля до следующего (для плавной интерполяции скелетов)
@@ -72,7 +66,7 @@ export function draw(ctx, W, H, data, t, layers) {
   return [i, level];
 }
 
-function Timeline({ data, t, onSeek }) {
+function Timeline({ data, t, onSeek, tr }) {
   const W = 800, H = 110, fr = data.frames, D = data.duration;
   const x = (s) => (s / D) * W, y = (v) => H - 16 - Math.min(v, 1) * (H - 28);
   const line = fr.map((f, i) => `${i ? "L" : "M"}${x(f.t).toFixed(1)},${y(f.s).toFixed(1)}`).join(" ");
@@ -84,19 +78,20 @@ function Timeline({ data, t, onSeek }) {
   });
   const click = (e) => { const r = e.currentTarget.getBoundingClientRect(); onSeek(((e.clientX - r.left) / r.width) * D); };
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} onClick={click} role="img" aria-label="График риска по времени">
+    <svg viewBox={`0 0 ${W} ${H}`} onClick={click} role="img" aria-label={tr.chartAria}>
       {[0, 0.5, 1].map((v) => <g key={v}><line x1="0" x2={W} y1={y(v)} y2={y(v)} stroke="#2B313A" /><text x="2" y={y(v) - 3}>{v.toFixed(1)}</text></g>)}
       {zones.map(([a, b], i) => <rect key={i} x={x(a)} y="0" width={Math.max(x(b) - x(a), 3)} height={H - 16} fill="#C1341C" fillOpacity=".28" />)}
       <line x1="0" x2={W} y1={y(data.t_high)} y2={y(data.t_high)} stroke="#E8A21C" strokeDasharray="5 4" />
-      <text x={W - 4} y={y(data.t_high) - 4} textAnchor="end" style={{ fill: "#E8A21C" }}>порог тревоги {data.t_high.toFixed(2)}</text>
+      <text x={W - 4} y={y(data.t_high) - 4} textAnchor="end" style={{ fill: "#E8A21C" }}>{tr.thrLine} {data.t_high.toFixed(2)}</text>
       <path d={line} fill="none" stroke="#E9EBE6" strokeWidth="2" />
       <line x1={x(t)} x2={x(t)} y1="0" y2={H - 16} stroke="#fff" strokeWidth="1" />
-      {[0, 1, 2, 3, 4, 5, 6, 7, 8].filter((s) => s <= D).map((s) => <text key={s} x={Math.min(x(s) + 2, W - 14)} y={H - 3}>{s} с</text>)}
+      {[0, 1, 2, 3, 4, 5, 6, 7, 8].filter((s) => s <= D).map((s) => <text key={s} x={Math.min(x(s) + 2, W - 14)} y={H - 3}>{s} {tr.sec}</text>)}
     </svg>
   );
 }
 
-export default function Player({ base = "/replay", cam = "CAM 01" }) {
+export default function Player({ base = "/replay", cam = "CAM 01", t = T.ru.P }) {
+  const SIGNALS = SIGNAL_KEYS.map((k) => [k, t.sig[k][0], t.sig[k][1]]);
   const [index, setIndex] = useState([]);
   const [sel, setSel] = useState(null);
   const [data, setData] = useState(null);
@@ -142,12 +137,14 @@ export default function Player({ base = "/replay", cam = "CAM 01" }) {
   const level = fr ? now.level : "calm";
   // в тексте называем не больше двух самых сильных сигналов: блок имеет постоянную высоту и не двигает страницу
   const hot = fr ? SIGNALS.filter(([k]) => (fr.c[k] || 0) >= 0.4).sort((a, b) => fr.c[b[0]] - fr.c[a[0]]).slice(0, 2) : [];
-  const status = { calm: "Спокойно", warn: "Риск растёт", alert: "Тревога" }[level];
+  const status = t.st[level];
   const meta = index.find((c) => c.id === sel);
-  const why = !fr ? "Загрузка…"
-    : level === "alert" ? `Запись этого момента уходит психологу в Telegram. ${hot.length ? "Причина: " + hot.map((h) => h[2]).join("; ") + "." : "Причина: характер движения за последние две секунды."}`
-    : hot.length ? `Система заметила: ${hot.map((h) => h[2]).join("; ")}. Этого пока мало для тревоги.`
-    : "Движения и дистанции между людьми в пределах обычного.";
+  const hotText = hot.map((h) => h[2]).join("; ");
+  const why = !fr ? t.loading
+    : level === "alert" ? `${t.sent} ${hot.length ? t.cause.replace("{v}", hotText) : t.causeDefault}`
+    : hot.length ? t.noticed.replace("{v}", hotText)
+    : t.normal;
+  const clipTitle = (c) => `${c.label ? t.fight : t.calm} · ${c.title.split(" · ").slice(1).join(" · ")}`;
   const L = (k, label) => <button key={k} className={"ctl" + (layers[k] ? " on" : "")} aria-pressed={layers[k]} onClick={() => setLayers({ ...layers, [k]: !layers[k] })}>{label}</button>;
 
   return (
@@ -156,45 +153,45 @@ export default function Player({ base = "/replay", cam = "CAM 01" }) {
         <div className="screen" style={{ aspectRatio: data ? `${data.width}/${data.height}` : "4/3" }}>
           {sel && <video ref={vref} key={sel} src={`${base}/${sel}.mp4`} autoPlay muted loop playsInline />}
           <canvas ref={cref} />
-          <div className="osd">{cam} · {fr ? fr.t.toFixed(1).padStart(4, "0") : "00.0"} с · людей: {fr ? fr.p.length : 0}</div>
+          <div className="osd">{cam} · {fr ? fr.t.toFixed(1).padStart(4, "0") : "00.0"} {t.sec} · {t.people}: {fr ? fr.p.length : 0}</div>
           <div className={"osd right " + level}>{status}</div>
         </div>
         <div className="controls">
-          <button className="ctl" onClick={toggle}>{playing ? "Пауза" : "Играть"}</button>
+          <button className="ctl" onClick={toggle}>{playing ? t.pause : t.play}</button>
           {[0.25, 0.5, 1].map((r) => <button key={r} className={"ctl" + (rate === r ? " on" : "")} onClick={() => setRate(r)}>{r}×</button>)}
           <span className="ctl-sep" />
-          {L("skeleton", "Скелеты")}{L("boxes", "Рамки участников")}{L("trails", "Траектории")}
+          {L("skeleton", t.skeleton)}{L("boxes", t.boxes)}{L("trails", t.trails)}
         </div>
         {data && (
           <div className="timeline">
-            <div className="cap"><span>Риск конфликта во времени</span><span>нажмите, чтобы перемотать</span></div>
-            <Timeline data={data} t={fr ? fr.t : 0} onSeek={seek} />
+            <div className="cap"><span>{t.riskTime}</span><span>{t.seek}</span></div>
+            <Timeline data={data} t={fr ? fr.t : 0} onSeek={seek} tr={t} />
           </div>
         )}
       </div>
 
       <div className="panel">
         <div className="box">
-          <h3>Оценка системы сейчас</h3>
-          <div className="risk"><b className={level}>{fr ? fr.s.toFixed(2) : "—"}</b><span>риск от 0 до 1<br />порог {data ? data.t_high.toFixed(2) : "—"}</span></div>
+          <h3>{t.nowH}</h3>
+          <div className="risk"><b className={level}>{fr ? fr.s.toFixed(2) : "—"}</b><span>{t.risk01}<br />{t.thr} {data ? data.t_high.toFixed(2) : "—"}</span></div>
           <p className="why">{why}</p>
         </div>
         <div className="box">
-          <h3>Что система видит в движениях</h3>
+          <h3>{t.seesH}</h3>
           {SIGNALS.map(([k, label]) => {
             const v = fr?.c[k] || 0;
             return <div className={"sigrow" + (v >= 0.4 ? " hot" : "")} key={k}><span>{label}</span><em>{v.toFixed(2)}</em><i><u style={{ width: `${Math.min(v, 1) * 100}%` }} /></i></div>;
           })}
         </div>
         <div className="box">
-          <h3>Записи{meta ? "" : ""}</h3>
+          <h3>{t.clipsH}</h3>
           <div className="cliplist">
             {index.map((c) => {
               const right = !!c.alerts === !!c.label;
               return (
                 <button key={c.id} className={"clipbtn" + (sel === c.id ? " sel" : "")} onClick={() => { setSel(c.id); setPlaying(true); }}>
-                  <span>{c.title}</span>
-                  <em className={right ? "hit" : "miss"}>{c.alerts ? "тревога" : "без тревоги"}{right ? "" : " · ошибка"}</em>
+                  <span>{clipTitle(c)}</span>
+                  <em className={right ? "hit" : "miss"}>{c.alerts ? t.alert : t.noAlert}{right ? "" : " · " + t.err}</em>
                 </button>
               );
             })}

@@ -324,3 +324,10 @@ footer { margin-top: 56px; }
 .phone { display: block; width: 100%; max-width: 330px; height: auto; }
 .status li { transition: color .35s ease; } .status li::after { transition: background-color .35s ease; }
 @media (prefers-reduced-motion: reduce) { .status li, .status li::after { transition: none; } }
+/* переключатель языка в шапке */
+.langsw { margin-left: auto; display: flex; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; padding: 3px; }
+.langsw button { background: none; border: 0; color: #C9D1D6; font: 500 13px var(--sans); letter-spacing: .04em; padding: 6px 11px; border-radius: 999px; cursor: pointer; }
+.langsw button:hover { color: #fff; }
+.langsw button.on { background: #fff; color: #07090C; }
+.nav .btn { margin-left: 0; }
+@media (max-width: 520px) { .nav { gap: 10px; padding-left: 14px; } .nav .logo { font-size: 0; gap: 0; } .langsw button { padding: 6px 8px; } }

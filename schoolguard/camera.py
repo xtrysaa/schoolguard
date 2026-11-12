@@ -61,7 +61,7 @@ def probe(source: str) -> dict:
     try:
         cap, is_file = open_capture(source)
         if not cap.isOpened():
-            return {"ok": False, "error": "Не удалось подключиться. Проверьте адрес, логин и пароль камеры."}
+            return {"ok": False, "error": "err_connect"}
         frame = None
         for _ in range(12):
             ok, f = cap.read()
@@ -69,7 +69,7 @@ def probe(source: str) -> dict:
                 frame = f
         cap.release()
         if frame is None:
-            return {"ok": False, "error": "Камера ответила, но не отдаёт изображение."}
+            return {"ok": False, "error": "err_noimage"}
         h, w = frame.shape[:2]
         if w > 640:
             frame = cv2.resize(frame, (640, int(h * 640 / w)))
@@ -183,7 +183,7 @@ class CameraWorker:
             except Exception as e:
                 cap, is_file, self.error = None, False, str(e)
             if cap is None or not cap.isOpened():
-                self.state, self.error = "offline", self.error or "Нет сигнала. Повторное подключение…"
+                self.state, self.error = "offline", self.error or "err_nosignal"
                 self._stop.wait(5)
                 continue
             fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
@@ -229,7 +229,7 @@ class CameraWorker:
                 self._switch = False
                 continue
             if not self._stop.is_set():
-                self.state, self.error = "offline", "Сигнал потерян. Повторное подключение…"
+                self.state, self.error = "offline", "err_lost"
                 self._stop.wait(3)
 
     # ------------------------------------------------------------ анализ
@@ -276,7 +276,7 @@ class CameraWorker:
                 st = eng.update(row, t)
             except Exception as e:
                 log.exception("analysis %s", self.id)
-                self.error = f"Ошибка анализа: {e}"
+                self.error = f"err_analysis: {e}"
                 time.sleep(1)
                 continue
             fps_t.append(t)
