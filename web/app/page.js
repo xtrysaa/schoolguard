@@ -93,7 +93,7 @@ export default function Home() {
 
         <section className="sec2" id="how">
           <div className="chead"><h2>Как работает SchoolGuard</h2></div>
-          <Rows m={m} tg={<TgCard thr={m.thresholds.balanced} />} />
+          <Rows m={m} tg={<img className="phone" src="/phone.png" width="900" height="1760" alt="Экран телефона: уведомление Telegram от SchoolGuard о возможном конфликте с номером камеры, датой, временем и риском" />} />
         </section>
 
         <section className="sec2" id="numbers">
