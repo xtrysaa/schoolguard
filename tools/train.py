@@ -69,6 +69,9 @@ def main():
     ap.add_argument("--out", type=Path, default=ROOT / "models" / "sg_model.npz")
     ap.add_argument("--report", type=Path, default=ROOT / "reports" / "v2_metrics.json")
     ap.add_argument("--workers", type=int, default=6)
+    ap.add_argument("--feedback", type=Path, default=ROOT / "data" / "feedback",
+                    help="папка с отметками школ (tools/fetch_feedback.py); добавляются только в обучение")
+    ap.add_argument("--feedback-weight", type=float, default=3.0)
     a = ap.parse_args()
     import xgboost as xgb
     from sklearn.metrics import roc_auc_score
@@ -102,6 +105,21 @@ def main():
     w = np.ones(len(Yf))
     for s in set(Sf):
         w[Sf == s] = len(Sf) / (len(set(Sf)) * (Sf == s).sum())
+    # отметки из школ: окна, на которых человек ответил «подтверждено» или «ложная тревога».
+    # Идут только в обучение с фиксированным весом; проверочная и тестовая части не меняются, поэтому метрики сравнимы.
+    fb = []
+    for p in sorted(a.feedback.glob("*.json")) if a.feedback.exists() else []:
+        try:
+            r = json.loads(p.read_text(encoding="utf-8"))
+            x = np.asarray(r["features"], np.float32)
+            if x.shape == (Xf.shape[1],) and np.isfinite(x).all() and r["verdict"] in ("confirmed", "false_alarm"):
+                fb.append((x, int(r["verdict"] == "confirmed")))
+        except Exception:
+            continue
+    if fb:
+        Xf = np.concatenate([Xf, np.stack([x for x, _ in fb])]); Yf = np.concatenate([Yf, np.array([y for _, y in fb])])
+        w = np.concatenate([w, np.full(len(fb), a.feedback_weight)])
+    print(f"отметок из школ в обучении: {len(fb)} (подтверждено {sum(y for _, y in fb)}, ложных {len(fb) - sum(y for _, y in fb)})")
     clf = xgb.XGBClassifier(n_estimators=1200, max_depth=5, learning_rate=0.04, subsample=0.8, colsample_bytree=0.5,
                             min_child_weight=8, reg_lambda=2.0, gamma=0.5, tree_method="hist", eval_metric="auc",
                             early_stopping_rounds=80, n_jobs=8, random_state=0)

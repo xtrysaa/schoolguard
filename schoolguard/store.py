@@ -39,6 +39,7 @@ DEFAULTS = {
         "retention_days": 30,
         "device": "auto",              # auto | cpu
         "autostart": False,
+        "share_feedback": False,       # отправлять отметки «подтверждено / ложная» и признаки движения (без видео) для дообучения
     },
 }
 
@@ -64,6 +65,10 @@ class Store:
         self.db.execute("""CREATE TABLE IF NOT EXISTS events(
             id TEXT PRIMARY KEY, ts REAL, camera_id TEXT, camera_no INTEGER, camera_name TEXT, peak REAL, threshold REAL,
             signals TEXT, clip TEXT, thumb TEXT, verdict TEXT, sent INTEGER DEFAULT 0, note TEXT)""")
+        have = {r["name"] for r in self.db.execute("PRAGMA table_info(events)")}
+        for col, typ in (("features", "TEXT"), ("shared", "INTEGER DEFAULT 0")):
+            if col not in have:
+                self.db.execute(f"ALTER TABLE events ADD COLUMN {col} {typ}")
         self.db.commit()
 
     # ------------------------------------------------------------ настройки
@@ -106,10 +111,11 @@ class Store:
     # ------------------------------------------------------------ события
     def add_event(self, ev: dict):
         with self.lock:
-            self.db.execute("INSERT INTO events(id, ts, camera_id, camera_no, camera_name, peak, threshold, signals, clip, thumb)"
-                            " VALUES(?,?,?,?,?,?,?,?,?,?)",
+            self.db.execute("INSERT INTO events(id, ts, camera_id, camera_no, camera_name, peak, threshold, signals, clip, thumb, features)"
+                            " VALUES(?,?,?,?,?,?,?,?,?,?,?)",
                             (ev["id"], ev["ts"], ev["camera_id"], ev["camera_no"], ev["camera_name"], ev["peak"],
-                             ev["threshold"], json.dumps(ev["signals"], ensure_ascii=False), ev.get("clip"), ev.get("thumb")))
+                             ev["threshold"], json.dumps(ev["signals"], ensure_ascii=False), ev.get("clip"), ev.get("thumb"),
+                             json.dumps(ev["features"]) if ev.get("features") else None))
             self.db.commit()
 
     def update_event(self, ev_id: str, **kw):
@@ -167,4 +173,16 @@ class Store:
     def _row(r) -> dict:
         d = dict(r)
         d["signals"] = json.loads(d["signals"] or "{}")
+        d["has_features"] = bool(d.pop("features", None))      # сами числа в интерфейс не отдаём
         return d
+
+    def event_features(self, ev_id: str) -> list | None:
+        with self.lock:
+            r = self.db.execute("SELECT features FROM events WHERE id=?", (ev_id,)).fetchone()
+        return json.loads(r["features"]) if r and r["features"] else None
+
+    def unshared(self) -> list[str]:
+        """События с ответом человека и признаками, которые ещё не отправлены."""
+        with self.lock:
+            return [r["id"] for r in self.db.execute(
+                "SELECT id FROM events WHERE verdict IS NOT NULL AND features IS NOT NULL AND shared=0").fetchall()]

@@ -29,6 +29,7 @@ class Telegram:
         self.offset = 0
         self.error = ""
         self.last_bind: dict | None = None      # последний подключившийся (интерфейс показывает «готово»)
+        self.on_verdict = None                  # вызывается после отметки из Telegram (id события)
         self._stop = False
         self._wake = threading.Event()
         self._thread = threading.Thread(target=self._loop, daemon=True, name="telegram")
@@ -169,7 +170,9 @@ class Telegram:
             verdict, _, ev_id = q["data"].partition(":")
             ev = self.store.get_event(ev_id)
             if ev and not ev.get("verdict"):
-                self.store.update_event(ev_id, verdict="confirmed" if verdict == "ok" else "false_alarm")
+                self.store.update_event(ev_id, verdict="confirmed" if verdict == "ok" else "false_alarm", shared=0)
+                if self.on_verdict:
+                    self.on_verdict(ev_id)
                 res = "✅ Подтверждено" if verdict == "ok" else "❌ Отмечено как ложная тревога"
             else:
                 res = "Уже отмечено"

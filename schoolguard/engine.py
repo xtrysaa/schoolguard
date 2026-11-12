@@ -45,6 +45,7 @@ class RiskEngine:
         self.heur: deque = deque()          # (t, эвристика кадра)
         self.hist: deque = deque()          # (t, итоговый score) — для проверки длительности
         self.prob = None
+        self.last_vec = None                # признаки окна, по которым считалась последняя вероятность
         self.t_pred = -1e9
         self.active = False
         self.below_since = None
@@ -62,6 +63,7 @@ class RiskEngine:
         if self.model is not None and span >= MIN_SPAN_S and len(self.rows) >= 6 and t - self.t_pred >= PREDICT_EVERY_S:
             vec = aggregate_window(np.array([x[1] for x in self.rows]), min(span + 1e-6, WINDOW_S))
             p = self.model.predict(vec)
+            self.last_vec = vec
             self.prob = p if self.prob is None else 0.5 * self.prob + 0.5 * p
             self.t_pred = t
         if self.model is None:

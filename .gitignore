@@ -2,7 +2,7 @@
 bot_token.txt
 data/
 alerts/
-feedback/
+/feedback/
 models/*
 !models/sg_model.npz
 __pycache__/

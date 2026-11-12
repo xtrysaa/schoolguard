@@ -316,7 +316,9 @@ class CameraWorker:
                 avg = {k: float(np.mean([s[k] for s in sig_hist])) for k in keys}
                 rec = {"id": uuid.uuid4().hex[:12], "ts": time.time(), "frames": list(buf), "peak": st.score,
                        "until": t + float(self.settings().get("clip_post_s", 5)), "signals": avg, "thumb": jb,
-                       "threshold": eng.t_high}
+                       "threshold": eng.t_high,
+                       # признаки окна, вызвавшего тревогу; для демо не сохраняем: это известные записи, не данные школы
+                       "features": None if self.is_demo or eng.last_vec is None else [round(float(v), 5) for v in eng.last_vec]}
 
     def _finish_alert(self, rec: dict):
         clips = self.store.home / "clips"
@@ -326,7 +328,8 @@ class CameraWorker:
         ok = write_clip(rec["frames"], clip)
         ev = {"id": rec["id"], "ts": rec["ts"], "camera_id": self.id, "camera_no": self.cam["no"],
               "camera_name": self.cam["name"], "peak": float(rec["peak"]), "threshold": float(rec["threshold"]),
-              "signals": rec["signals"], "clip": clip.name if ok else None, "thumb": f"{name}.jpg"}
+              "signals": rec["signals"], "clip": clip.name if ok else None, "thumb": f"{name}.jpg",
+              "features": rec.get("features")}
         self.store.add_event(ev)
         if self.is_demo:                                      # в журнале держим не больше пяти демо-событий
             for old in self.store.list_events(500, self.id)[DEMO_KEEP:]:

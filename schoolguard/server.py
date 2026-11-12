@@ -24,6 +24,7 @@ from .store import Store, resource_dir
 from .telegram import Telegram
 
 log = logging.getLogger("schoolguard.server")
+FEEDBACK_URL = "https://schoolguard-roan.vercel.app/api/feedback"
 SENS = {"sensitive": "Высокая", "balanced": "Средняя", "strict": "Низкая"}
 
 
@@ -41,6 +42,7 @@ class Core:
         self.detector = PoseDetector(res / "models" / "onnx" / "yolo11s-pose.onnx",
                                      device=self.store.cfg["settings"].get("device", "auto"))
         self.telegram = Telegram(self.store)
+        self.telegram.on_verdict = self.share_async
         self._import_token()
         self.workers: dict[str, CameraWorker] = {}
         self.lock = threading.RLock()
@@ -81,9 +83,46 @@ class Core:
         while not self.quit.is_set():
             try:
                 self.store.cleanup()
+                self.share_pending()
             except Exception:
-                log.exception("cleanup")
+                log.exception("housekeeping")
             self.quit.wait(3600)
+
+    # ------------------------------------------------------------ обмен отметками (только по согласию школы)
+    def share(self, ev_id: str) -> bool:
+        """Отправляет на общий сервер ответ человека и 125 чисел-признаков окна. Видео, кадры, название камеры
+        и время события не отправляются."""
+        if not self.store.cfg["settings"].get("share_feedback"):
+            return False
+        ev, feats = self.store.get_event(ev_id), self.store.event_features(ev_id)
+        if not ev or not feats or ev.get("verdict") not in ("confirmed", "false_alarm"):
+            return False
+        import requests
+        r = requests.post(FEEDBACK_URL, timeout=15, json={
+            "v": 1, "id": ev["id"], "verdict": ev["verdict"], "features": feats, "peak": round(float(ev["peak"]), 4),
+            "threshold": round(float(ev["threshold"]), 4), "app": __version__})
+        if r.ok and r.json().get("ok"):
+            self.store.update_event(ev_id, shared=1)
+            return True
+        log.warning("обмен отметками: сервер ответил %s", r.status_code)
+        return False
+
+    def share_async(self, ev_id: str):
+        def run():
+            try:
+                self.share(ev_id)
+            except Exception as e:
+                log.warning("обмен отметками: %s", e)
+        threading.Thread(target=run, daemon=True).start()
+
+    def share_pending(self):
+        if self.store.cfg["settings"].get("share_feedback"):
+            for ev_id in self.store.unshared():
+                try:
+                    self.share(ev_id)
+                except Exception as e:
+                    log.warning("обмен отметками: %s", e)
+                    break
 
     # ------------------------------------------------------------ API
     def state(self) -> dict:
@@ -146,7 +185,7 @@ class Core:
 
     def set_settings(self, body: dict):
         allowed = {"sensitivity": str, "privacy_blur": bool, "clip_pre_s": float, "clip_post_s": float, "cooldown_s": float,
-                   "retention_days": int, "device": str, "autostart": bool}
+                   "retention_days": int, "device": str, "autostart": bool, "share_feedback": bool}
         with self.store.lock:
             s = self.store.cfg["settings"]
             for k, typ in allowed.items():
@@ -160,6 +199,8 @@ class Core:
         if "autostart" in body:
             from .winutil import set_autostart
             set_autostart(bool(body["autostart"]))
+        if body.get("share_feedback"):
+            threading.Thread(target=self.share_pending, daemon=True).start()
 
     def shutdown(self):
         self.quit.set()
@@ -330,7 +371,8 @@ class Handler(BaseHTTPRequestHandler):
                     return self._json({"ok": False, "error": str(e)})
             if m := re.match(r"/api/events/(\w+)/verdict$", p):
                 v = b.get("verdict")
-                core.store.update_event(m.group(1), verdict=v if v in ("confirmed", "false_alarm") else None)
+                core.store.update_event(m.group(1), verdict=v if v in ("confirmed", "false_alarm") else None, shared=0)
+                core.share_async(m.group(1))
                 return self._json({"ok": True})
             if m := re.match(r"/api/events/(\w+)/delete$", p):
                 core.store.delete_event(m.group(1))

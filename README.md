@@ -23,6 +23,10 @@
 
 Записи и настройки хранятся в `%LOCALAPPDATA%\SchoolGuard`. Наружу уходят только клипы тревог — в Telegram.
 
+**Дообучение на ответах (по желанию).** В настройках есть переключатель «Отправлять ваши отметки разработчикам», по умолчанию
+он выключен. Если его включить, при отметке «Подтвердить» или «Ложная тревога» на сервер проекта уходит ответ и 125 признаков
+окна (числа о движении за 2 с). Видео, кадры, название камеры и время не отправляются; отметки на демо-записях тоже.
+
 ## Как это устроено
 
 ```
@@ -40,6 +44,7 @@
 | Камеры | `schoolguard/camera.py` | захват с переподключением, кольцевой буфер, запись клипа H.264 |
 | Telegram | `schoolguard/telegram.py` | привязка по коду/QR, отправка видео, кнопки подтверждения |
 | Интерфейс | `schoolguard/server.py`, `schoolguard/ui/` | локальный сервер и страницы программы |
+| Обмен отметками | `schoolguard/server.py` (`share`), `web/app/api/feedback/route.js` | по согласию школы: ответ + 125 признаков -> закрытое хранилище Vercel Blob |
 
 Обучение и приложение используют один и тот же код от детекций до риска, поэтому то, что измерено на тесте,
 и то, что работает в программе, — одно и то же.
@@ -85,6 +90,8 @@ python tools/extract_dets.py --out data/dets_s --gt путь/к/groundtruth.json
 python tools/train.py                                                         # признаки -> модель -> пороги -> reports/v2_metrics.json
 python tools/export_demo.py --set surv --out web/public/replay --n 6          # ролики для сайта (только из теста)
 python tools/make_demo.py                                                     # демо-записи программы (assets/demo) + проверка ответов на них
+cd web && node scripts/fetch-feedback.mjs && cd ..                           # отметки школ -> data/feedback (нужен ключ в web/.env.local)
+python tools/train.py                                                         # те же данные + отметки школ (только в обучение, тест прежний)
 pyinstaller desktop/SchoolGuard.spec --noconfirm                              # dist/SchoolGuard.exe
 ```
 
