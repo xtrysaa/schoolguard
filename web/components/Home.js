@@ -61,7 +61,7 @@ export default function Home({ m }) {
 
         <section className="sec2" id="how">
           <div className="chead"><h2>{t.how.h2}</h2></div>
-          <Rows m={m} t={t.how} phone={<img className="phone" src="/phone.png" width="900" height="1760" alt={t.how.phoneAlt} />} />
+          <Rows m={m} t={t.how} phone={<img className="phone" src={`/phone-${lang}.png`} width="900" height="1760" alt={t.how.phoneAlt} />} />
         </section>
 
         <section className="sec2" id="numbers">
@@ -80,7 +80,7 @@ export default function Home({ m }) {
           <div className="chead"><h2>{t.app.h2}</h2><p>{t.app.p}</p></div>
           <div className="appgrid">
             <figure className="shot">
-              <img src="/app-live.jpg" alt={t.app.shotAlt} width="800" height="518" />
+              <img src={`/app-live-${lang}.jpg`} alt={t.app.shotAlt} width="800" height="518" />
               <figcaption>{t.app.shotCap}</figcaption>
             </figure>
             <ol className="setup">

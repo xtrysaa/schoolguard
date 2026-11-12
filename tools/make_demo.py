@@ -5,7 +5,7 @@
 Сцены — клипы Fight Detection Surv (MIT) из тестовой части. Тревога по устройству системы возможна не раньше
 чем через ~1,8 с после начала сцены, а клипы длятся 2–3 с, поэтому каждая сцена идёт «вперёд и назад»:
 движение остаётся непрерывным, и сцена длится достаточно, чтобы увидеть ответ системы.
-В углу кадра подписано, что на самом деле происходит в сцене.
+В углу кадра стоит пометка DEMO; что на самом деле происходит в сцене, подписано в окне программы на выбранном языке.
 
     python tools/make_demo.py            # собрать и проверить
     python tools/make_demo.py --check    # только проверить готовую запись
@@ -56,7 +56,7 @@ def read_scene(name: str) -> list[np.ndarray]:
 
 def label(frame: np.ndarray, fight: int) -> np.ndarray:
     from PIL import Image, ImageDraw, ImageFont
-    text = "ДЕМО · в кадре драка" if fight else "ДЕМО · обычная сцена"
+    text = "DEMO"            # без слов: программа работает на трёх языках, а что в сцене — подписано в её окне
     im = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
     d = ImageDraw.Draw(im, "RGBA")
     font = ImageFont.truetype("C:/Windows/Fonts/segoeuib.ttf", 15)

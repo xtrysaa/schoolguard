@@ -3,7 +3,8 @@
     python demo/make_phone_mockup.py
 Результат:
     demo/phone_mockup.png       — текст из рекламного сценария (постановка, 96 %)
-    web/public/phone.png        — то, что на самом деле присылает программа; эта картинка стоит на сайте
+    web/public/phone-ru.png, phone-kk.png, phone-en.png — то, что на самом деле присылает программа, на трёх языках;
+                                  эти картинки стоят на сайте
 """
 from pathlib import Path
 
@@ -13,7 +14,12 @@ HERE = Path(__file__).resolve().parent
 F = "C:/Windows/Fonts/"
 W, H = 900, 1760
 PROMO = "Внимание! Зафиксировано проявление агрессии/буллинга. Локация: Коридор Б, 2 этаж. Вероятность: 96%. Требуется немедленное вмешательство."
-REAL = "Возможный конфликт. Камера № 2 — Коридор, 2 этаж. 12.11.2026, 13:45:07. Риск 0.81 (порог 0.65). Видео · 0:10"
+# текст уведомления повторяет подпись, которую программа отправляет на выбранном языке (schoolguard/i18n.py)
+REAL = {
+    "ru": ("Возможный конфликт. Камера № 2 — Коридор, 2 этаж. 12.11.2026, 13:45:07. Риск 0.81 (порог 0.65). Видео · 0:10", "четверг, 12 ноября", "сейчас"),
+    "kk": ("Ықтимал жанжал. № 2 камера — Дәліз, 2-қабат. 12.11.2026, 13:45:07. Тәуекел 0.81 (шек 0.65). Бейне · 0:10", "бейсенбі, 12 қараша", "қазір"),
+    "en": ("Possible conflict. Camera 2 — Corridor, 2nd floor. 12.11.2026, 13:45:07. Risk 0.81 (threshold 0.65). Video · 0:10", "Thursday, 12 November", "now"),
+}
 
 
 def font(size, bold=False):
@@ -31,7 +37,7 @@ def wrap(d, text, f, width):
     return lines + [cur]
 
 
-def render(text: str, out: Path, transparent: bool):
+def render(text: str, out: Path, transparent: bool, date: str = "четверг, 12 ноября", now: str = "сейчас"):
     S = 2                                                              # рисуем крупнее и уменьшаем: гладкие края
     img = Image.new("RGBA", (W * S, H * S), (0, 0, 0, 0) if transparent else (7, 9, 12, 255))
     d = ImageDraw.Draw(img)
@@ -53,7 +59,7 @@ def render(text: str, out: Path, transparent: bool):
     img.paste(screen, (sx0 * S, sy0 * S), mask)
     d = ImageDraw.Draw(img)
     d.rounded_rectangle(R(W // 2 - 125, 92, W // 2 + 125, 162), 35 * S, fill=(0, 0, 0, 255))        # Dynamic Island
-    d.text((W // 2 * S, 250 * S), "четверг, 12 ноября", font=font(40 * S), fill=(230, 238, 240, 255), anchor="mm")
+    d.text((W // 2 * S, 250 * S), date, font=font(40 * S), fill=(230, 238, 240, 255), anchor="mm")
     d.text((W // 2 * S, 390 * S), "13:45", font=font(190 * S, True), fill=(255, 255, 255, 255), anchor="mm")
 
     # уведомление
@@ -71,7 +77,7 @@ def render(text: str, out: Path, transparent: bool):
               fill=(255, 255, 255, 255))
     tx = nx0 + 132
     d.text((tx * S, (ny0 + 22) * S), "SchoolGuard", font=title_f, fill=(17, 20, 24, 255))
-    d.text(((nx1 - 28) * S, (ny0 + 28) * S), "сейчас", font=small_f, fill=(107, 116, 128, 255), anchor="ra")
+    d.text(((nx1 - 28) * S, (ny0 + 28) * S), now, font=small_f, fill=(107, 116, 128, 255), anchor="ra")
     y = ny0 + 70
     for ln in lines:
         d.text((tx * S, y * S), ln, font=body_f, fill=(30, 36, 43, 255))
@@ -84,4 +90,5 @@ def render(text: str, out: Path, transparent: bool):
 
 if __name__ == "__main__":
     render(PROMO, HERE / "phone_mockup.png", transparent=False)
-    render(REAL, HERE.parent / "web" / "public" / "phone.png", transparent=True)
+    for lang, (text, date, now) in REAL.items():
+        render(text, HERE.parent / "web" / "public" / f"phone-{lang}.png", True, date, now)
