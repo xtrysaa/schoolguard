@@ -63,7 +63,7 @@ const ru = {
   priv: {
     h2: "Следит за движениями, а не за людьми",
     cards: [
-      ["Без лиц и имён", "Нет распознавания лиц и личностей: у людей в кадре только временные номера. Головы закрываются пикселями в трансляции, в записях и в Telegram. Выключить это можно только с паролем администратора, и каждое изменение остаётся в журнале."],
+      ["Без лиц и имён", "Нет распознавания лиц и личностей: у людей в кадре только временные номера. В клипах тревог, в журнале событий и в Telegram головы всегда закрыты пикселями, и в программе нет настройки, чтобы это выключить. Лица видны только в живом окне наблюдения на компьютере школы, как на обычном мониторе охраны."],
       ["Видео остаётся в школе", "Обработка идёт на компьютере школы. Наружу уходят только короткие записи тревог в Telegram. Записи хранятся 30 дней и удаляются сами."],
       ["Решает человек", "Система никого не наказывает и не выносит решений: она предупреждает взрослого. Обмен ответами для дообучения выключен, пока школа сама его не включит, и в нём только числа."],
     ],
@@ -79,7 +79,7 @@ const ru = {
       ["Нужен ли мощный компьютер?", "Программа рассчитана на обычный компьютер и считает на процессоре; с видеокартой работает быстрее. Проверялась она на ноутбуке с видеокартой, на компьютере без видеокарты кадров в секунду будет меньше."],
       ["Куда уходит видео с камер?", "Никуда. Обработка идёт на компьютере школы. Наружу отправляются только короткие записи тревог — в Telegram тем, кого вы сами подключили. Лица на записях закрыты."],
       ["Что уходит на сервер разработчика?", "Без согласия школы ничего. При первом запуске программа спрашивает, отправлять ли отметки разработчику, а потом это меняется в настройках. Если школа согласилась, при нажатии «Подтвердить» или «Ложная тревога» на сервер сразу уходит этот ответ и 125 чисел о движении за две секунды. Видео, кадры, название камеры и время не отправляются. Сервер — закрытое хранилище Vercel Blob в аккаунте автора проекта, регион США; доступ есть только у автора. Автоматического удаления нет: данные хранятся, пока автор их не удалит. Модель на них дообучается вручную и выходит с обновлением программы."],
-      ["Что мешает школе выключить закрытие лиц?", "Пароль администратора и журнал. Если пароль задан, без него нельзя выключить закрытие лиц, включить отправку отметок и изменить срок хранения. Каждое такое изменение записывается в журнал с датой и временем, удалить запись из программы нельзя. Пока закрытие лиц выключено, на экране наблюдения висит предупреждение."],
+      ["Что мешает школе выключить закрытие лиц?", "Его нельзя выключить. В клипах тревог, журнале событий и Telegram лица закрыты всегда, такой настройки в программе нет. Открытыми лица видны только в живом окне наблюдения на компьютере школы. Пароль администратора защищает отправку отметок и срок хранения записей, а каждое такое изменение записывается в журнал с датой и временем."],
       ["Что будет при ложной тревоге?", "Тревога — это просьба посмотреть запись, а не вывод. Психолог нажимает «Ложная тревога», отметка попадает в журнал. Если ложных тревог много, чувствительность уменьшается одной настройкой."],
       ["Подойдут ли наши камеры?", "Подойдёт IP-камера или видеорегистратор с потоком RTSP: это большинство камер Hikvision, Dahua и похожих. Также работают веб-камера и видеофайл. На настоящих школьных камерах программа пока не проверялась."],
     ],
@@ -167,7 +167,7 @@ const kk = {
   priv: {
     h2: "Адамдарды емес, қимылды бақылайды",
     cards: [
-      ["Бетсіз және есімсіз", "Бет пен тұлғаны тану жоқ: кадрдағы адамдарда тек уақытша нөмірлер бар. Бастар көрсетілімде, жазбаларда және Telegram-да пиксельдермен жабылады. Мұны тек әкімші құпиясөзімен өшіруге болады, әр өзгеріс журналда қалады."],
+      ["Бетсіз және есімсіз", "Бет пен тұлғаны тану жоқ: кадрдағы адамдарда тек уақытша нөмірлер бар. Дабыл клиптерінде, оқиғалар журналында және Telegram-да бастар әрқашан пиксельдермен жабылады, бағдарламада мұны өшіретін баптау жоқ. Беттер тек мектеп компьютеріндегі тікелей бақылау терезесінде, кәдімгі күзет мониторындағыдай көрінеді."],
       ["Бейне мектепте қалады", "Өңдеу мектеп компьютерінде жүреді. Сыртқа тек дабылдардың қысқа жазбалары Telegram-ға кетеді. Жазбалар 30 күн сақталып, өзі жойылады."],
       ["Шешімді адам қабылдайды", "Жүйе ешкімді жазаламайды және шешім шығармайды: ол ересек адамды ескертеді. Қосымша оқытуға арналған жауап алмасу мектеп өзі қоспайынша өшірулі, онда тек сандар бар."],
     ],
@@ -183,7 +183,7 @@ const kk = {
       ["Қуатты компьютер қажет пе?", "Бағдарлама қарапайым компьютерге арналған және процессорда есептейді; бейнекартамен жылдамырақ жұмыс істейді. Ол бейнекартасы бар ноутбукте тексерілген, бейнекартасыз компьютерде секундына кадр саны аз болады."],
       ["Камералардағы бейне қайда кетеді?", "Ешқайда. Өңдеу мектеп компьютерінде жүреді. Сыртқа тек дабылдардың қысқа жазбалары — өзіңіз қосқан адамдарға Telegram арқылы жіберіледі. Жазбалардағы беттер жабылған."],
       ["Әзірлеушінің серверіне не кетеді?", "Мектептің келісімінсіз ештеңе. Алғашқы іске қосқанда бағдарлама белгілерді әзірлеушіге жіберу-жібермеуді сұрайды, кейін мұны баптауларда өзгертуге болады. Мектеп келіссе, «Растау» немесе «Жалған дабыл» басылғанда серверге бірден осы жауап пен екі секундтық қимыл туралы 125 сан кетеді. Бейне, кадрлар, камера атауы мен уақыты жіберілмейді. Сервер — жоба авторының аккаунтындағы жабық Vercel Blob қоймасы, АҚШ аймағы; оған тек автор кіре алады. Автоматты жою жоқ: деректер автор жойғанша сақталады. Модель оларда қолмен қосымша оқытылып, бағдарлама жаңартуымен шығады."],
-      ["Мектепке беттерді жабуды өшіруге не кедергі?", "Әкімші құпиясөзі мен журнал. Құпиясөз орнатылса, онсыз беттерді жабуды өшіру, белгілерді жіберуді қосу және сақтау мерзімін өзгерту мүмкін емес. Әр осындай өзгеріс журналға күні мен уақытымен жазылады, жазбаны бағдарламадан жою мүмкін емес. Беттерді жабу өшірулі кезде бақылау экранында ескерту тұрады."],
+      ["Мектепке беттерді жабуды өшіруге не кедергі?", "Оны өшіру мүмкін емес. Дабыл клиптерінде, оқиғалар журналында және Telegram-да беттер әрқашан жабық, бағдарламада мұндай баптау жоқ. Беттер тек мектеп компьютеріндегі тікелей бақылау терезесінде ашық көрінеді. Әкімші құпиясөзі белгілерді жіберуді және сақтау мерзімін қорғайды, әр осындай өзгеріс журналға күні мен уақытымен жазылады."],
       ["Жалған дабыл болса не болады?", "Дабыл — қорытынды емес, жазбаны қарау туралы өтініш. Психолог «Жалған дабыл» түймесін басады, белгі журналға түседі. Жалған дабыл көп болса, сезімталдық бір баптаумен азайтылады."],
       ["Біздің камералар жарай ма?", "RTSP ағыны бар IP-камера немесе бейнетіркеуіш жарайды: бұл Hikvision, Dahua және соған ұқсас камералардың көпшілігі. Веб-камера мен бейнефайл да жұмыс істейді. Нақты мектеп камераларында бағдарлама әзірге тексерілген жоқ."],
     ],
@@ -271,7 +271,7 @@ const en = {
   priv: {
     h2: "It watches movement, not people",
     cards: [
-      ["No faces, no names", "There is no face or identity recognition: people in the frame only have temporary numbers. Heads are pixelated in the live view, in recordings and in Telegram. This can only be turned off with the administrator password, and every change stays in the log."],
+      ["No faces, no names", "There is no face or identity recognition: people in the frame only have temporary numbers. In alert clips, the event log and Telegram heads are always pixelated, and the program has no setting to turn this off. Faces are visible only in the live view on the school computer, as on an ordinary security monitor."],
       ["Video stays in the school", "Processing runs on the school's computer. Only short alert recordings leave it, to Telegram. Recordings are kept for 30 days and then deleted automatically."],
       ["A person decides", "The system punishes no one and makes no decisions: it warns an adult. Sharing answers for retraining is off until the school turns it on, and it contains only numbers."],
     ],
@@ -287,7 +287,7 @@ const en = {
       ["Do I need a powerful computer?", "The program is meant for an ordinary computer and runs on the CPU; with a graphics card it is faster. It was tested on a laptop with a graphics card; without one there will be fewer frames per second."],
       ["Where does the camera video go?", "Nowhere. Processing runs on the school's computer. Only short alert recordings leave it — to Telegram, to the people you connected yourself. Faces in the recordings are masked."],
       ["What is sent to the developer's server?", "Nothing without the school's consent. On first launch the program asks whether to send marks to the developer, and this can be changed later in settings. If the school agrees, pressing “Confirm” or “False alarm” immediately sends that answer and 125 numbers about two seconds of movement. Video, frames, the camera name and the time are not sent. The server is a private Vercel Blob store in the project author's account, in a US region; only the author has access. There is no automatic deletion: data are kept until the author deletes them. The model is retrained on them by hand and released with a program update."],
-      ["What stops a school from turning face masking off?", "An administrator password and a log. If a password is set, face masking cannot be turned off, mark sharing cannot be turned on and the retention period cannot be changed without it. Every such change is written to a log with date and time, and an entry cannot be deleted from the program. While face masking is off, the Monitoring screen shows a warning."],
+      ["What stops a school from turning face masking off?", "It cannot be turned off. In alert clips, the event log and Telegram faces are always masked, and the program has no such setting. Faces are visible only in the live view on the school computer. The administrator password protects mark sharing and the retention period, and every such change is written to a log with date and time."],
       ["What happens on a false alarm?", "An alert is a request to watch the recording, not a verdict. The psychologist presses “False alarm” and the mark goes to the log. If there are many false alarms, sensitivity is lowered with one setting."],
       ["Will our cameras work?", "An IP camera or video recorder with an RTSP stream will do: that covers most Hikvision, Dahua and similar cameras. A webcam and a video file work too. The program has not yet been tested on real school cameras."],
     ],

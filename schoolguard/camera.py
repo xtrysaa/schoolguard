@@ -286,17 +286,24 @@ class CameraWorker:
             sig_hist.append(st.signals)
             level = 2 if st.alert_active else 1 if st.score >= 0.6 * eng.t_high else 0
 
-            vis = frame.copy()
-            if self.settings().get("privacy_blur", True):
-                pixelate_heads(vis, people)
-            draw_people(vis, people, level, info.get("pair"))
+            # Окно наблюдения на компьютере школы показывает лица (по желанию их можно закрыть и здесь).
+            # Всё, что сохраняется и уходит наружу (клип, миниатюра, Telegram), всегда с закрытыми лицами.
             stamp = time.strftime("%d.%m.%Y %H:%M:%S")
-            draw_hud(vis, st.score, eng.t_high, level, f"CAM {self.cam['no']:02d}  {stamp}")
-            ok, jpg = cv2.imencode(".jpg", vis, [cv2.IMWRITE_JPEG_QUALITY, 78])
-            if not ok:
+
+            def compose(blur: bool):
+                v = frame.copy()
+                if blur:
+                    pixelate_heads(v, people)
+                draw_people(v, people, level, info.get("pair"))
+                draw_hud(v, st.score, eng.t_high, level, f"CAM {self.cam['no']:02d}  {stamp}")
+                ok, jpg = cv2.imencode(".jpg", v, [cv2.IMWRITE_JPEG_QUALITY, 78])
+                return jpg.tobytes() if ok else None
+
+            jb = compose(True)                                 # для клипа: лица закрыты всегда
+            live = jb if self.settings().get("live_blur", False) else compose(False)
+            if jb is None or live is None:
                 continue
-            jb = jpg.tobytes()
-            self.jpeg, self.seq = jb, self.seq + 1
+            self.jpeg, self.seq = live, self.seq + 1
             pre = float(self.settings().get("clip_pre_s", 5))
             buf.append((t, jb))
             while buf and buf[0][0] < t - pre:

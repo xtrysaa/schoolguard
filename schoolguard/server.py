@@ -235,10 +235,10 @@ class Core:
         if enable:
             threading.Thread(target=self.share_pending, daemon=True).start()
 
-    PROTECTED = ("privacy_blur", "share_feedback", "retention_days")     # меняются только с паролем, если он задан
+    PROTECTED = ("share_feedback", "retention_days")     # меняются только с паролем, если он задан
 
     def set_settings(self, body: dict):
-        allowed = {"sensitivity": str, "privacy_blur": bool, "clip_pre_s": float, "clip_post_s": float, "cooldown_s": float,
+        allowed = {"sensitivity": str, "live_blur": bool, "clip_pre_s": float, "clip_post_s": float, "cooldown_s": float,
                    "retention_days": int, "device": str, "autostart": bool, "share_feedback": bool, "lang": str}
         cur = self.store.cfg["settings"]
         changed = [k for k in self.PROTECTED if k in body and allowed[k](body[k]) != cur.get(k)]

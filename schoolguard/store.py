@@ -33,7 +33,8 @@ DEFAULTS = {
     "telegram": {"token": "", "bot_username": "", "bot_name": "", "recipients": []},
     "settings": {
         "sensitivity": "balanced",     # sensitive | balanced | strict
-        "privacy_blur": True,          # пикселизация голов в записи и трансляции
+        "privacy_blur": True,          # устарело (до 2.6.3): клипы теперь всегда с закрытыми лицами
+        "live_blur": False,            # закрывать лица и в окне наблюдения (в клипах и Telegram закрыты всегда)
         "clip_pre_s": 5, "clip_post_s": 5,
         "cooldown_s": 45,              # не чаще одной тревоги с камеры за это время
         "retention_days": 30,

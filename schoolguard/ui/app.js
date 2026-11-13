@@ -49,8 +49,9 @@ async function poll() {
   $("#sysline").innerHTML = `<div>${t("sys_cams")} <b>${on} / ${S.cameras.length}</b></div><div>${t("sys_compute")} <b>${S.device === "GPU" ? t("gpu") : t("cpu")}</b></div>`
     + `<div>Telegram <b class="${S.telegram.recipients.length ? "ok" : "off"}">${S.telegram.recipients.length ? t("sys_tg_on") : t("sys_tg_off")}</b></div><div>${t("sys_time")} <b>${new Date().toLocaleTimeString(LOCALES[LANG])}</b></div>`;
   const key = LANG + page + "|" + S.cameras.map(c => c.id + c.name + c.enabled + c.source + !!c.demo).join(",") + "|" + S.telegram.connected + S.telegram.recipients.length
-    + "|" + S.settings.sensitivity + S.settings.privacy_blur + S.settings.share_feedback + S.pin_set;
-  if (key !== lastKey && !document.activeElement.matches("input, select")) { lastKey = key; render(); }
+    + "|" + S.settings.sensitivity + S.settings.live_blur + S.settings.share_feedback + S.pin_set;
+  // не перерисовываем, пока человек печатает в поле; переключатели всегда показывают то, что сохранено на самом деле
+  if (key !== lastKey && !document.activeElement.matches("input:not([type=checkbox]):not([type=radio]), select")) { lastKey = key; render(); }
   else tick();
   if (bindInfo && S.telegram.last_bind) { toast(t("tg_bound", { n: S.telegram.last_bind.name })); bindInfo = null; lastKey = ""; }
   if (!S.settings.share_asked && $("#modal").hidden) askShare();
@@ -78,7 +79,7 @@ function render() {
 // ------------------------------------------------------------------ наблюдение
 function renderLive() {
   const cams = S.cameras.filter(c => c.enabled);
-  const warn = S.settings.privacy_blur ? "" : `<p class="banner">${t("blur_off_banner")}</p>`;
+  const warn = "";
   if (!cams.length) {
     main.innerHTML = `<div class="head"><div><h1>${t("nav_live")}</h1></div></div>${warn}
     <div class="empty"><h2>${t("live_empty_h")}</h2>
@@ -323,7 +324,7 @@ function renderSettings() {
   <div class="card"><h2>${t("set_sens")}</h2><div class="opts">${SENS.map(k => `<button class="opt ${s.sensitivity === k ? "on" : ""}" onclick="setS({sensitivity:'${k}'})"><b>${t("sens_" + k)}</b><span>${t("desc_" + k)}</span>${th[k] != null ? `<span class="mono">${t("thr", { v: (+th[k]).toFixed(2) })}</span>` : ""}</button>`).join("")}</div>
     <p class="note" style="margin-top:10px">${t("thr_note")}</p></div>
   <div class="card"><h2>${t("set_privacy")}</h2>
-    <label class="switch"><input type="checkbox" ${s.privacy_blur ? "checked" : ""} onchange="setS({privacy_blur:this.checked})"><span>${t("blur_h")}<small>${t("blur_p")}</small></span></label>
+    <label class="switch"><input type="checkbox" ${s.live_blur ? "checked" : ""} onchange="setS({live_blur:this.checked})"><span>${t("blur_h")}<small>${t("blur_p")}</small></span></label>
     <div class="form" style="margin-top:14px">${num("clip_pre_s", t("clip_pre"), 2, 15, t("unit_s"))}${num("clip_post_s", t("clip_post"), 2, 15, t("unit_s"))}${num("cooldown_s", t("cooldown"), 10, 600, t("unit_s"))}${num("retention_days", t("retention"), 1, 365, t("unit_days"))}</div></div>
   <div class="card"><h2>${t("set_share")}</h2>
     <label class="switch"><input type="checkbox" ${s.share_feedback ? "checked" : ""} onchange="setS({share_feedback:this.checked})"><span>${t("share_h")}<small>${t("share_p")}</small></span></label></div>
@@ -354,7 +355,8 @@ async function setS(patch) {
   if (r.error === "pin_required") {
     const pin = await askPin(t("pin_prompt"));
     if (pin !== null) { r = await api("/api/settings", { ...patch, pin }); if (r.error === "pin_required") toast(t("pin_wrong")); }
-  }
+  } else if (r.error) toast(t("save_failed"));
+  if (document.activeElement && document.activeElement.type === "checkbox") document.activeElement.blur();
   lastKey = ""; await poll(); if (page === "settings") loadAudit();
 }
 async function pinChange() {
