@@ -50,6 +50,34 @@ def add_rich(par, text, size=None, italic=None):
             set_font(par.add_run(part), size=size, bold=(i % 2 == 1) or None, italic=italic)
 
 
+LINK_RE = re.compile(r"https?://[^\s)]+?(?=[.,;)]?(?:\s|$))|(?<=DOI: )10\.\S+?(?=\.?(?:\s|$))")
+
+
+def add_link(par, text, url):
+    """Кликабельная ссылка (синяя, подчёркнутая)."""
+    rid = par.part.relate_to(url, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink", is_external=True)
+    h = OxmlElement("w:hyperlink"); h.set(qn("r:id"), rid)
+    r = OxmlElement("w:r"); rpr = OxmlElement("w:rPr")
+    col = OxmlElement("w:color"); col.set(qn("w:val"), "1155CC"); rpr.append(col)
+    u = OxmlElement("w:u"); u.set(qn("w:val"), "single"); rpr.append(u)
+    r.append(rpr)
+    t = OxmlElement("w:t"); t.set(qn("xml:space"), "preserve"); t.text = text; r.append(t)
+    h.append(r); par._p.append(h)
+
+
+def add_with_links(par, text):
+    """Пункт списка литературы: адреса и DOI становятся ссылками."""
+    pos = 0
+    for m in LINK_RE.finditer(text):
+        if m.start() > pos:
+            set_font(par.add_run(text[pos:m.start()]))
+        s = m.group(0)
+        add_link(par, s, s if s.startswith("http") else "https://doi.org/" + s)
+        pos = m.end()
+    if pos < len(text):
+        set_font(par.add_run(text[pos:]))
+
+
 def style_setup(doc):
     st = doc.styles
     n = st["Normal"]
@@ -185,7 +213,11 @@ def build():
                     ref_num = nid
             nid = ref_num if kind == "ol_ref" else nid
             for item in b[1]:
-                p = doc.add_paragraph(style="List Number"); add_rich(p, item); set_num(p, nid)
+                p = doc.add_paragraph(style="List Number"); set_num(p, nid)
+                if kind == "ol_ref":
+                    add_with_links(p, item)
+                else:
+                    add_rich(p, item)
                 p.paragraph_format.space_after = Pt(3)
         elif kind == "formula":
             p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER

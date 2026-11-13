@@ -593,11 +593,13 @@ BLOCKS = [
         "International Conference on Knowledge Discovery and Data Mining (KDD '16). San Francisco, 2016. DOI: "
         "10.1145/2939672.2939785.",
         "Zhang Y., Sun P., Jiang Y., Yu D., Weng F., Yuan Z., Luo P., Liu W., Wang X. ByteTrack: Multi-Object "
-        "Tracking by Associating Every Detection Box. arXiv:2110.06864, 2021.",
+        "Tracking by Associating Every Detection Box. arXiv:2110.06864, 2021. URL: "
+        "https://arxiv.org/abs/2110.06864",
         "Jocher G., Qiu J. Ultralytics YOLO11, version 11.0.0 [программное обеспечение]. GitHub, 2024. URL: "
         "https://github.com/ultralytics/ultralytics.",
         "Lin T.-Y., Maire M., Belongie S., Hays J., Perona P., Ramanan D., Dollár P., Zitnick C. L. Microsoft "
-        "COCO: Common Objects in Context // Computer Vision - ECCV 2014. Springer, 2014. P. 740-755.",
+        "COCO: Common Objects in Context // Computer Vision - ECCV 2014. Springer, 2014. P. 740-755. URL: "
+        "https://arxiv.org/abs/1405.0312",
         "Yan S., Xiong Y., Lin D. Spatial Temporal Graph Convolutional Networks for Skeleton-Based Action "
         "Recognition // Proceedings of the AAAI Conference on Artificial Intelligence. 2018. Vol. 32, No. 1. "
         "DOI: 10.1609/aaai.v32i1.12328.",
@@ -632,23 +634,24 @@ BLOCKS = [
         "OECD. PISA 2018 Results (Volume III): What School Life Means for Students' Lives. Paris: OECD "
         "Publishing, 2019.",
         "Pedregosa F. et al. Scikit-learn: Machine Learning in Python // Journal of Machine Learning "
-        "Research. 2011. Vol. 12. P. 2825-2830.",
+        "Research. 2011. Vol. 12. P. 2825-2830. URL: https://jmlr.org/papers/v12/pedregosa11a.html",
     ]),
     ("h2", "Нормативные правовые акты Республики Казахстан"),
     ("ol_ref", [
         "Закон Республики Казахстан от 21 мая 2013 года № 94-V \"О персональных данных и их защите\" (с "
         "изменениями и дополнениями). URL: https://adilet.zan.kz/rus/docs/Z1300000094.",
         "Закон Республики Казахстан от 8 августа 2002 года № 345 \"О правах ребёнка в Республике Казахстан\" (с "
-        "изменениями и дополнениями).",
+        "изменениями и дополнениями). URL: https://adilet.zan.kz/rus/docs/Z020000345_",
         "Кодекс Республики Казахстан об административных правонарушениях от 5 июля 2014 года № 235-V, статья "
         "127-2 (введена Законом Республики Казахстан от 15 апреля 2024 года № 73-VIII, действует с 16 июня "
-        "2024 года).",
+        "2024 года). URL: https://adilet.zan.kz/rus/docs/K1400000235",
     ]),
     ("h2", "Наборы данных"),
     ("ol_ref", [
         "Fight Detection Surv Dataset. URL: https://github.com/seymanurakti/fight-detection-surv-dataset "
         "(лицензия MIT).",
-        "Real Life Violence Situations Dataset. Kaggle (см. [8]).",
+        "Real Life Violence Situations Dataset. Kaggle (см. [8]). URL: "
+        "https://www.kaggle.com/datasets/mohamedmustafa/real-life-violence-situations-dataset",
         "NTU CCTV-Fights Dataset. Rapid-Rich Object Search (ROSE) Lab, Nanyang Technological University. URL: "
         "https://rose1.ntu.edu.sg/dataset/cctvFights/ (см. [9]).",
     ]),
