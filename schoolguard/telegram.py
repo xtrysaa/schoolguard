@@ -126,7 +126,8 @@ class Telegram:
                    + tr(S, "risk", p=f"{ev['peak']:.2f}", t=f"{ev['threshold']:.2f}") + "\n"
                    + (tr(S, "signs", v=", ".join(top)) + "\n" if top else "")
                    + ("" if S.cfg["settings"].get("privacy_blur", True) else "\n" + tr(S, "faces_open") + "\n")
-                   + "\n" + tr(S, "alert_foot"))
+                   + "\n" + tr(S, "alert_foot") + "\n"
+                   + tr(S, "learn_on" if S.cfg["settings"].get("share_feedback") else "learn_off"))
         kb = json.dumps({"inline_keyboard": [[{"text": tr(S, "btn_ok"), "callback_data": f"ok:{ev['id']}"},
                                               {"text": tr(S, "btn_fp"), "callback_data": f"fp:{ev['id']}"}]]})
         sent = 0

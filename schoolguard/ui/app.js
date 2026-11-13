@@ -53,6 +53,18 @@ async function poll() {
   if (key !== lastKey && !document.activeElement.matches("input, select")) { lastKey = key; render(); }
   else tick();
   if (bindInfo && S.telegram.last_bind) { toast(t("tg_bound", { n: S.telegram.last_bind.name })); bindInfo = null; lastKey = ""; }
+  if (!S.settings.share_asked && $("#modal").hidden) askShare();
+}
+
+// Один раз после выбора языка: спросить школу, отправлять ли отметки разработчику (без видео).
+function askShare() {
+  const m = $("#modal");
+  m.innerHTML = `<div class="sheet consent"><h2>${t("consent_h")}</h2><p>${t("consent_p")}</p><p class="note">${t("consent_note")}</p>
+    <div class="row" style="margin-top:16px"><button class="btn primary" id="share_yes">${t("btn_enable")}</button><button class="btn" id="share_no">${t("btn_not_now")}</button></div></div>`;
+  m.hidden = false;
+  const answer = async enable => { m.hidden = true; m.innerHTML = ""; await api("/api/share_consent", { enable }); if (enable) toast(t("consent_thanks")); lastKey = ""; await poll(); };
+  $("#share_yes").onclick = () => answer(true);
+  $("#share_no").onclick = () => answer(false);
 }
 
 function render() {

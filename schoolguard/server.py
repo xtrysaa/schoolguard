@@ -84,13 +84,16 @@ class Core:
             w.stop()
 
     def _housekeeping(self):
+        """Раз в минуту досылает отметки, которые не ушли сразу (нет сети, сервер не ответил); раз в час чистит старые записи."""
+        last_cleanup = 0.0
         while not self.quit.is_set():
             try:
-                self.store.cleanup()
+                if time.time() - last_cleanup > 3600:
+                    self.store.cleanup(); last_cleanup = time.time()
                 self.share_pending()
             except Exception:
                 log.exception("housekeeping")
-            self.quit.wait(3600)
+            self.quit.wait(60)
 
     # ------------------------------------------------------------ обмен отметками (только по согласию школы)
     def share(self, ev_id: str) -> bool:
@@ -120,6 +123,7 @@ class Core:
         threading.Thread(target=run, daemon=True).start()
 
     def share_pending(self):
+        """Очередь на диске: события с ответом, у которых в базе shared=0. Отправляются по порядку до первой ошибки сети."""
         if self.store.cfg["settings"].get("share_feedback"):
             for ev_id in self.store.unshared():
                 try:
@@ -216,6 +220,20 @@ class Core:
             self.store.cfg["settings"]["admin_pin"] = self._pin_hash(new) if new else ""
             self.store.save()
         self.store.add_audit("admin_pin", "set" if had else "none", "set" if new else "none")
+
+    def share_consent(self, enable: bool):
+        """Ответ школы в окне первого запуска. Спрашиваем один раз; позже переключатель меняется в настройках (с паролем)."""
+        with self.store.lock:
+            s = self.store.cfg["settings"]
+            if s.get("share_asked"):
+                raise PermissionError("already_asked")
+            old = bool(s.get("share_feedback"))
+            s["share_feedback"], s["share_asked"] = bool(enable), True
+            self.store.save()
+        if old != bool(enable):
+            self.store.add_audit("share_feedback", old, bool(enable))
+        if enable:
+            threading.Thread(target=self.share_pending, daemon=True).start()
 
     PROTECTED = ("privacy_blur", "share_feedback", "retention_days")     # меняются только с паролем, если он задан
 
@@ -392,6 +410,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"ok": True})
             if p == "/api/settings":
                 core.set_settings(b)
+                return self._json({"ok": True})
+            if p == "/api/share_consent":
+                core.share_consent(bool(b.get("enable")))
                 return self._json({"ok": True})
             if p == "/api/pin":
                 core.set_pin(b)
